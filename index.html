@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>Kingdom Quiz — Bible Trivia Night</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<!-- Tailwind CDN (utility classes only — theme lives in style.css) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Firebase (compat SDK — simplest for a first Firebase project) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- Ambient stained-glass rosette, sits behind everything -->
+<svg class="rosette" viewBox="0 0 600 600" aria-hidden="true">
+  <g id="rosetteGroup">
+    <circle cx="300" cy="300" r="280" class="rosette-ring" />
+    <circle cx="300" cy="300" r="220" class="rosette-ring" />
+    <circle cx="300" cy="300" r="160" class="rosette-ring" />
+  </g>
+</svg>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">✦ Kingdom Quiz</span>
+    <div class="topbar-right">
+      <span id="roomBadge" class="room-badge hidden"></span>
+      <button id="muteBtn" class="icon-btn" title="Mute sound">🔊</button>
+    </div>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ============ SCREEN: ROLE SELECT ============ -->
+  <section id="screen-role" class="screen active">
+    <div class="stage-card center">
+      <p class="eyebrow">Trivia Night</p>
+      <h1 class="display-xl">Kingdom Quiz</h1>
+      <p class="subtitle">A host-led Bible trivia game for church game nights — gather round, pick a role, and let's begin.</p>
+      <div class="role-grid">
+        <button class="role-card" data-role="host">
+          <span class="role-icon">🎙️</span>
+          <span class="role-title">Host the Game</span>
+          <span class="role-desc">Run the trivia on this device. Players take turns answering here.</span>
+        </button>
+        <button class="role-card" data-role="audience">
+          <span class="role-icon">📱</span>
+          <span class="role-title">Join as Audience</span>
+          <span class="role-desc">Enter a room code to follow along and vote during "Ask the Audience."</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: RULES ============ -->
+  <section id="screen-rules" class="screen">
+    <div class="stage-card">
+      <p class="eyebrow">Before We Begin</p>
+      <h2 class="display-lg">How to Play</h2>
+      <ol class="rules-list">
+        <li><strong>Turns.</strong> Between 1 and 4 players take turns answering Bible trivia questions, one player at a time.</li>
+        <li><strong>Scoring.</strong> A correct answer earns <span class="pill pill-good">+10 points</span>. A wrong answer costs <span class="pill pill-bad">−5 points</span>. Passing scores <span class="pill">0 points</span>.</li>
+        <li><strong>Lifelines.</strong> Each player may use these once per turn, at most:
+          <ul class="rules-sublist">
+            <li><strong>50:50</strong> — removes two wrong options.</li>
+            <li><strong>Phone a Friend</strong> — 30 seconds to consult someone off-screen.</li>
+            <li><strong>Ask the Audience</strong> — everyone connected on their phones votes live, and the results appear as a bar chart.</li>
+          </ul>
+        </li>
+        <li><strong>Host control.</strong> Only the host advances the game — revealing answers and moving to the next turn.</li>
+        <li><strong>Winning.</strong> After every player completes their set of questions, the player with the highest score wins the crown. 👑</li>
+      </ol>
+      <button id="rulesContinueBtn" class="btn btn-primary btn-block">Got it — let's set up</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: HOST SETUP ============ -->
+  <section id="screen-host-setup" class="screen">
+    <div class="stage-card">
+      <p class="eyebrow">Host Setup</p>
+      <h2 class="display-lg">Set Up Your Game</h2>
+
+      <label class="field-label">How many players?</label>
+      <select id="playerCountSelect" class="field-select">
+        <option value="1">1 player</option>
+        <option value="2" selected>2 players</option>
+        <option value="3">3 players</option>
+        <option value="4">4 players</option>
+      </select>
+
+      <div id="playerNameInputs" class="player-name-grid"></div>
+
+      <label class="field-label">Questions per player</label>
+      <div class="chip-row" id="questionsPerPlayerRow">
+        <button class="chip" data-val="5">5</button>
+        <button class="chip chip-selected" data-val="10">10</button>
+        <button class="chip" data-val="15">15</button>
+        <button class="chip" data-val="20">20</button>
+      </div>
+
+      <button id="startGameBtn" class="btn btn-primary btn-block">Start Game</button>
+      <p class="hint-text">This creates a room code your audience can join from their phones.</p>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: HOST GAME VIEW ============ -->
+  <section id="screen-host-game" class="screen">
+    <div class="host-layout">
+
+      <div class="host-header">
+        <div>
+          <p class="eyebrow" id="activePlayerLabel">Player 1's turn</p>
+          <h2 class="display-md" id="scoreboardActive">0 pts</h2>
+        </div>
+        <div class="host-header-meta">
+          <span id="roundLabel">Question 1 of 10</span>
+        </div>
+      </div>
+
+      <div class="scoreboard-strip" id="scoreboardStrip"></div>
+
+      <div class="question-card">
+        <p class="question-text" id="questionText">Loading question…</p>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+
+      <div class="lifeline-row">
+        <button class="lifeline-btn" id="lifeline5050" data-lifeline="fiftyFifty">
+          <span class="lifeline-icon">➗</span> 50:50
+        </button>
+        <button class="lifeline-btn" id="lifelinePhone" data-lifeline="phoneAFriend">
+          <span class="lifeline-icon">📞</span> Phone a Friend
+        </button>
+        <button class="lifeline-btn" id="lifelineAudience" data-lifeline="askAudience">
+          <span class="lifeline-icon">🙌</span> Ask the Audience
+        </button>
+      </div>
+
+      <div id="audienceResultsPanel" class="audience-results hidden">
+        <p class="field-label">Audience Says…</p>
+        <div id="audienceBars" class="audience-bars"></div>
+      </div>
+
+      <div class="host-action-row">
+        <button id="submitAnswerBtn" class="btn btn-primary" disabled>Submit Answer</button>
+        <button id="passBtn" class="btn btn-ghost">Pass / Reveal</button>
+        <button id="nextTurnBtn" class="btn btn-secondary hidden">Next Turn →</button>
+      </div>
+
+      <p id="explanationText" class="explanation-text hidden"></p>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: AUDIENCE JOIN ============ -->
+  <section id="screen-audience-join" class="screen">
+    <div class="stage-card center">
+      <p class="eyebrow">Audience</p>
+      <h2 class="display-lg">Join a Room</h2>
+      <p class="subtitle">Ask the host for the 4-character room code shown on their screen.</p>
+      <input id="roomCodeInput" class="field-select code-input" maxlength="4" placeholder="ABCD" autocapitalize="characters" />
+      <button id="joinRoomBtn" class="btn btn-primary btn-block">Join Room</button>
+      <p id="joinError" class="error-text hidden">Room not found. Double-check the code and try again.</p>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: AUDIENCE VIEW ============ -->
+  <section id="screen-audience-view" class="screen">
+    <div class="stage-card">
+      <p class="eyebrow" id="audienceActivePlayer">Waiting for host…</p>
+      <h2 class="display-md" id="audienceQuestionText">The game will begin shortly.</h2>
+
+      <div id="audienceWaiting" class="waiting-overlay">
+        <div class="pulse-dot"></div>
+        <p>Watching the host's screen…</p>
+      </div>
+
+      <div id="audienceVotingPanel" class="hidden">
+        <p class="field-label" id="audienceTimer">30s to vote</p>
+        <div class="options-grid" id="audienceOptionsGrid"></div>
+        <p id="audienceVoteConfirm" class="vote-confirm hidden">✅ Vote recorded! Watch the host's screen for results.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: GAME OVER ============ -->
+  <section id="screen-gameover" class="screen">
+    <div class="stage-card center">
+      <p class="eyebrow">Final Results</p>
+      <h2 class="display-xl">🏆 Game Over</h2>
+      <div id="leaderboardTable" class="leaderboard-table"></div>
+      <div id="scoreChart" class="score-chart"></div>
+      <div class="host-action-row center">
+        <button id="rematchBtn" class="btn btn-primary">Rematch (Reset Scores)</button>
+        <button id="newGameBtn" class="btn btn-ghost">New Game / New Players</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/sounds.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
