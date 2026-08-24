@@ -39,6 +39,9 @@ const game = {
   roomId: null,
   audienceVotesUnsub: null,
   askAudienceTimer: null,
+  askAudienceActive: false,
+  askAudienceVotesRef: null,
+  askAudienceVotesHandler: null,
 };
 
 // Tracks which voting round (by its timerEndsAt timestamp) the audience
@@ -206,6 +209,10 @@ function shuffleOptionsForQuestion(q) {
 }
 
 function loadNextQuestion() {
+  // Safety net: guarantee no leftover "Ask the Audience" round carries
+  // into the new question, however the previous turn ended.
+  endAskAudience();
+
   // pick a random unused question
   let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id));
   if (pool.length === 0) {
@@ -278,6 +285,11 @@ function handleOptionClick(idx, btn) {
 }
 
 function lockOptionsAndReveal(chosenIndex) {
+  // The turn is resolving now — if "Ask the Audience" was running,
+  // close it out immediately so the audience screen clears in step
+  // with the host, instead of waiting out its own 30s timer.
+  endAskAudience();
+
   const correctIdx = game.currentQuestion.correctIndex;
   $$('#optionsGrid .option-btn').forEach((b) => {
     b.disabled = true;
@@ -410,21 +422,44 @@ function startAskAudience() {
   $('#audienceResultsPanel').classList.remove('hidden');
   $('#audienceBars').innerHTML = '<p style="color:var(--indigo-2);font-size:0.85rem;">Votes are coming in from the audience…</p>';
 
-  const votesRef = roomRef.child('lifelines/askAudience/votes');
-  const onVotes = (snapshot) => {
+  game.askAudienceVotesRef = roomRef.child('lifelines/askAudience/votes');
+  game.askAudienceVotesHandler = (snapshot) => {
     const votes = snapshot.val() || {};
     renderAudienceBars(votes);
   };
-  votesRef.on('value', onVotes);
+  game.askAudienceVotesRef.on('value', game.askAudienceVotesHandler);
+  game.askAudienceActive = true;
 
   game.askAudienceTimer = setInterval(() => {
     const remaining = Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000));
-    if (remaining <= 0) {
-      clearInterval(game.askAudienceTimer);
-      votesRef.off('value', onVotes);
-      roomRef.child('lifelines/askAudience/status').set('INACTIVE');
-    }
+    if (remaining <= 0) endAskAudience();
   }, 500);
+}
+
+// Fully closes out an "Ask the Audience" round — whether it's ending
+// because the 30s timer ran out, or because the host revealed the
+// answer / moved to the next turn before the timer finished. Without
+// this, a leftover setInterval and Firebase listener from an earlier
+// round keep running and only turn the audience's voting screen off
+// whenever THEIR original 30 seconds happens to elapse — which could
+// be turns later. Calling this immediately on every turn transition
+// guarantees the audience screen clears in step with the host.
+function endAskAudience() {
+  if (game.askAudienceTimer) {
+    clearInterval(game.askAudienceTimer);
+    game.askAudienceTimer = null;
+  }
+  if (game.askAudienceVotesRef && game.askAudienceVotesHandler) {
+    game.askAudienceVotesRef.off('value', game.askAudienceVotesHandler);
+    game.askAudienceVotesRef = null;
+    game.askAudienceVotesHandler = null;
+  }
+  const wasActive = game.askAudienceActive;
+  game.askAudienceActive = false;
+  $('#audienceResultsPanel').classList.add('hidden');
+  if (wasActive && FIREBASE_READY && game.roomId) {
+    db.ref(`rooms/${game.roomId}/lifelines/askAudience`).set({ status: 'INACTIVE', timeRemaining: 0, votes: {} });
+  }
 }
 
 function renderAudienceBars(votes) {
