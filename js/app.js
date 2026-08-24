@@ -36,11 +36,15 @@ const game = {
   currentQuestion: null,
   selectedOptionIndex: null,
   answered: false,
-  lifelinesUsedThisTurn: { fiftyFifty: false, phoneAFriend: false, askAudience: false },
   roomId: null,
   audienceVotesUnsub: null,
   askAudienceTimer: null,
 };
+
+// Tracks which voting round (by its timerEndsAt timestamp) the audience
+// device has already rendered/voted in, so a vote-count update doesn't
+// wipe out the "you voted" state or redraw fresh buttons mid-round.
+let audienceRenderedRoundKey = null;
 
 // ============================================================
 // MUTE BUTTON
@@ -121,7 +125,15 @@ $('#startGameBtn').addEventListener('click', async () => {
   const players = [];
   for (let i = 0; i < count; i++) {
     const val = $(`#playerNameInput${i}`).value.trim();
-    players.push({ name: val || `Player ${i + 1}`, score: 0, correct: 0, wrong: 0 });
+    players.push({
+      name: val || `Player ${i + 1}`,
+      score: 0,
+      correct: 0,
+      wrong: 0,
+      // Once a lifeline is used by this player, it stays used for the
+      // rest of the game — it does NOT reset on their next turn.
+      lifelinesUsed: { fiftyFifty: false, phoneAFriend: false, askAudience: false },
+    });
   }
 
   game.players = players;
@@ -175,6 +187,24 @@ function currentPlayer() {
   return game.players[game.turnOrder[game.turnIndex]];
 }
 
+// Shuffles a question's 4 options into a random order and returns a
+// fresh copy with correctIndex updated to match — without touching the
+// original entry in BIBLE_QUESTIONS. Every question in the bank has its
+// correct answer stored in slot 0, so without this step the correct
+// answer would always land in the same position on screen.
+function shuffleOptionsForQuestion(q) {
+  const order = [0, 1, 2, 3];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    ...q,
+    options: order.map((i) => q.options[i]),
+    correctIndex: order.indexOf(q.correctIndex),
+  };
+}
+
 function loadNextQuestion() {
   // pick a random unused question
   let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id));
@@ -184,10 +214,9 @@ function loadNextQuestion() {
   }
   const q = pool[Math.floor(Math.random() * pool.length)];
   game.usedQuestionIds.add(q.id);
-  game.currentQuestion = q;
+  game.currentQuestion = shuffleOptionsForQuestion(q);
   game.selectedOptionIndex = null;
   game.answered = false;
-  game.lifelinesUsedThisTurn = { fiftyFifty: false, phoneAFriend: false, askAudience: false };
 
   renderHostGameScreen();
   syncRoomQuestion();
@@ -230,10 +259,13 @@ function renderHostGameScreen() {
   $('#explanationText').classList.add('hidden');
   $('#audienceResultsPanel').classList.add('hidden');
 
-  // lifeline buttons
-  $('#lifeline5050').disabled = false;
-  $('#lifelinePhone').disabled = false;
-  if (FIREBASE_READY && game.roomId) $('#lifelineAudience').disabled = false;
+  // lifeline buttons — disabled state follows the ACTIVE PLAYER's own
+  // history (once they use a lifeline, it stays disabled on every future
+  // turn of theirs), not a per-turn reset.
+  const usedByPlayer = player.lifelinesUsed;
+  $('#lifeline5050').disabled = usedByPlayer.fiftyFifty;
+  $('#lifelinePhone').disabled = usedByPlayer.phoneAFriend;
+  $('#lifelineAudience').disabled = usedByPlayer.askAudience || !(FIREBASE_READY && game.roomId);
 }
 
 function handleOptionClick(idx, btn) {
@@ -299,8 +331,9 @@ $('#nextTurnBtn').addEventListener('click', () => {
 // LIFELINES
 // ============================================================
 $('#lifeline5050').addEventListener('click', () => {
-  if (game.lifelinesUsedThisTurn.fiftyFifty || game.answered) return;
-  game.lifelinesUsedThisTurn.fiftyFifty = true;
+  const player = currentPlayer();
+  if (player.lifelinesUsed.fiftyFifty || game.answered) return;
+  player.lifelinesUsed.fiftyFifty = true;
   $('#lifeline5050').disabled = true;
   SoundFX.lifeline();
 
@@ -322,8 +355,9 @@ $('#lifeline5050').addEventListener('click', () => {
 });
 
 $('#lifelinePhone').addEventListener('click', () => {
-  if (game.lifelinesUsedThisTurn.phoneAFriend || game.answered) return;
-  game.lifelinesUsedThisTurn.phoneAFriend = true;
+  const player = currentPlayer();
+  if (player.lifelinesUsed.phoneAFriend || game.answered) return;
+  player.lifelinesUsed.phoneAFriend = true;
   $('#lifelinePhone').disabled = true;
   SoundFX.lifeline();
   showPhoneAFriendModal();
@@ -359,9 +393,10 @@ function showPhoneAFriendModal() {
 }
 
 $('#lifelineAudience').addEventListener('click', () => {
-  if (game.lifelinesUsedThisTurn.askAudience || game.answered) return;
+  const player = currentPlayer();
+  if (player.lifelinesUsed.askAudience || game.answered) return;
   if (!(FIREBASE_READY && game.roomId)) return;
-  game.lifelinesUsedThisTurn.askAudience = true;
+  player.lifelinesUsed.askAudience = true;
   $('#lifelineAudience').disabled = true;
   SoundFX.lifeline();
   startAskAudience();
@@ -476,7 +511,10 @@ function renderGameOver() {
 }
 
 $('#rematchBtn').addEventListener('click', () => {
-  game.players.forEach((p) => { p.score = 0; p.correct = 0; p.wrong = 0; });
+  game.players.forEach((p) => {
+    p.score = 0; p.correct = 0; p.wrong = 0;
+    p.lifelinesUsed = { fiftyFifty: false, phoneAFriend: false, askAudience: false };
+  });
   game.turnIndex = 0;
   game.usedQuestionIds = new Set();
   if (FIREBASE_READY && game.roomId) {
@@ -548,14 +586,24 @@ function renderAudienceView(data, roomId) {
 
   const ask = data.lifelines && data.lifelines.askAudience;
   if (ask && ask.status === 'ACTIVE') {
-    audienceHasVotedThisRound = false;
     $('#audienceWaiting').classList.add('hidden');
     $('#audienceVotingPanel').classList.remove('hidden');
-    $('#audienceVoteConfirm').classList.add('hidden');
-    renderAudienceOptions(data.currentQuestion.options, roomId, ask.timerEndsAt);
+
+    // The room object updates on EVERY vote (since votes live under the
+    // same room), which re-fires this whole function. Only rebuild the
+    // voting buttons when it's actually a NEW round (a new timerEndsAt).
+    // Otherwise leave the grid alone so a device that already voted
+    // keeps showing "vote recorded" instead of a fresh, clickable grid.
+    if (ask.timerEndsAt !== audienceRenderedRoundKey) {
+      audienceRenderedRoundKey = ask.timerEndsAt;
+      audienceHasVotedThisRound = false;
+      $('#audienceVoteConfirm').classList.add('hidden');
+      renderAudienceOptions(data.currentQuestion.options, roomId, ask.timerEndsAt);
+    }
   } else {
     $('#audienceVotingPanel').classList.add('hidden');
     $('#audienceWaiting').classList.remove('hidden');
+    audienceRenderedRoundKey = null;
   }
 }
 
