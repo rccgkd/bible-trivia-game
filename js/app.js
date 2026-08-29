@@ -32,11 +32,21 @@ function showScreen(id) {
 
 // ---------- Kahoot-style answer tile colors + shapes ----------
 const OPTION_META = [
-  { shape: '▲', cls: 'opt-a' },
-  { shape: '◆', cls: 'opt-b' },
-  { shape: '●', cls: 'opt-c' },
-  { shape: '■', cls: 'opt-d' },
+  { label: 'A', cls: 'opt-a' },
+  { label: 'B', cls: 'opt-b' },
+  { label: 'C', cls: 'opt-c' },
+  { label: 'D', cls: 'opt-d' },
 ];
+
+// Shared by the host's question tiles and every audience member's
+// voting tiles, so both stay visually and structurally identical.
+function createOptionBar(idx, text) {
+  const btn = document.createElement('button');
+  btn.className = `option-btn ${OPTION_META[idx].cls}`;
+  btn.dataset.idx = idx;
+  btn.innerHTML = `<span class="option-badge"><span>${OPTION_META[idx].label}</span></span><span class="option-label-text">${text}</span>`;
+  return btn;
+}
 
 function voteCountsFromObj(votesObj) {
   const counts = [0, 0, 0, 0];
@@ -186,16 +196,6 @@ $$('#questionsPerPlayerRow .chip').forEach((chip) => {
   });
 });
 
-let selectedDifficulty = 'all';
-$$('#difficultyRow .chip').forEach((chip) => {
-  chip.addEventListener('click', () => {
-    $$('#difficultyRow .chip').forEach((c) => c.classList.remove('chip-selected'));
-    chip.classList.add('chip-selected');
-    selectedDifficulty = chip.dataset.val;
-    SoundFX.click();
-  });
-});
-
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing 0/O/1/I
   let id = '';
@@ -221,7 +221,6 @@ $('#startGameBtn').addEventListener('click', async () => {
 
   game.players = players;
   game.questionsPerPlayer = selectedQuestionsPerPlayer;
-  game.difficulty = selectedDifficulty;
   game.turnOrder = [];
   for (let q = 0; q < game.questionsPerPlayer; q++) {
     for (let p = 0; p < players.length; p++) game.turnOrder.push(p);
@@ -294,13 +293,11 @@ function loadNextQuestion() {
   // into the new question, however the previous turn ended.
   endAskAudience();
 
-  const difficultyOk = (q) => game.difficulty !== 'advanced' || q.tier === 'advanced';
-
   // pick a random unused question
-  let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id) && difficultyOk(q));
+  let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id));
   if (pool.length === 0) {
     game.usedQuestionIds.clear();
-    pool = BIBLE_QUESTIONS.filter(difficultyOk);
+    pool = BIBLE_QUESTIONS;
   }
   const q = pool[Math.floor(Math.random() * pool.length)];
   game.usedQuestionIds.add(q.id);
@@ -308,8 +305,27 @@ function loadNextQuestion() {
   game.selectedOptionIndex = null;
   game.answered = false;
 
-  renderHostGameScreen();
-  syncRoomQuestion();
+  // Dramatic "moving on" transition: the stage briefly dips out with a
+  // light sweep, then the new question fades back in, instead of the
+  // content just snapping to the next question instantly.
+  const stage = $('#quizStage');
+  const sweep = $('#stageSweep');
+  if (stage && sweep) {
+    stage.classList.remove('stage-in');
+    stage.classList.add('stage-out');
+    sweep.classList.remove('sweep-active');
+    void sweep.offsetWidth; // force reflow so the animation can replay
+    sweep.classList.add('sweep-active');
+    setTimeout(() => {
+      renderHostGameScreen();
+      syncRoomQuestion();
+      stage.classList.remove('stage-out');
+      stage.classList.add('stage-in');
+    }, 260);
+  } else {
+    renderHostGameScreen();
+    syncRoomQuestion();
+  }
 }
 
 function renderHostGameScreen() {
@@ -333,10 +349,7 @@ function renderHostGameScreen() {
   const grid = $('#optionsGrid');
   grid.innerHTML = '';
   game.currentQuestion.options.forEach((opt, idx) => {
-    const btn = document.createElement('button');
-    btn.className = `option-btn ${OPTION_META[idx].cls}`;
-    btn.dataset.idx = idx;
-    btn.innerHTML = `<span class="option-shape">${OPTION_META[idx].shape}</span><span class="option-label-text">${opt}</span>`;
+    const btn = createOptionBar(idx, opt);
     btn.addEventListener('click', () => handleOptionClick(idx, btn));
     grid.appendChild(btn);
   });
@@ -377,8 +390,13 @@ function lockOptionsAndReveal(chosenIndex) {
   $$('#optionsGrid .option-btn').forEach((b) => {
     b.disabled = true;
     const idx = parseInt(b.dataset.idx, 10);
-    if (idx === correctIdx) b.classList.add('correct-flash');
-    else if (idx === chosenIndex) b.classList.add('wrong-flash');
+    if (idx === correctIdx) {
+      b.classList.add('correct-flash');
+      b.insertAdjacentHTML('beforeend', '<span class="option-result-icon">✓</span>');
+    } else if (idx === chosenIndex) {
+      b.classList.add('wrong-flash');
+      b.insertAdjacentHTML('beforeend', '<span class="option-result-icon">✕</span>');
+    }
   });
   $('#explanationText').textContent = `📖 ${game.currentQuestion.explanation}`;
   $('#explanationText').classList.remove('hidden');
@@ -498,10 +516,13 @@ $('#lifelineAudience').addEventListener('click', () => {
   startAskAudience();
 });
 
+// How long the audience gets to vote during "Ask the Audience".
+const ASK_AUDIENCE_SECONDS = 20;
+
 function startAskAudience() {
-  const timerEndsAt = Date.now() + 30000;
+  const timerEndsAt = Date.now() + ASK_AUDIENCE_SECONDS * 1000;
   const roomRef = db.ref(`rooms/${game.roomId}`);
-  roomRef.child('lifelines/askAudience').set({ status: 'ACTIVE', timeRemaining: 30, timerEndsAt, votes: {} });
+  roomRef.child('lifelines/askAudience').set({ status: 'ACTIVE', timeRemaining: ASK_AUDIENCE_SECONDS, timerEndsAt, votes: {} });
 
   $('#audienceResultsPanel').classList.remove('hidden');
   $('#audienceBars').innerHTML = '<p style="color:var(--indigo-2);font-size:0.85rem;">Votes are coming in from the audience…</p>';
@@ -522,11 +543,11 @@ function startAskAudience() {
 }
 
 // Fully closes out an "Ask the Audience" round — whether it's ending
-// because the 30s timer ran out, or because the host revealed the
-// answer / moved to the next turn before the timer finished. Without
-// this, a leftover setInterval and Firebase listener from an earlier
-// round keep running and only turn the audience's voting screen off
-// whenever THEIR original 30 seconds happens to elapse — which could
+// because the timer ran out, or because the host revealed the answer
+// / moved to the next turn before the timer finished. Without this, a
+// leftover setInterval and Firebase listener from an earlier round
+// keep running and only turn the audience's voting screen off
+// whenever THEIR original countdown happens to elapse — which could
 // be turns later. Calling this immediately on every turn transition
 // guarantees the audience screen clears in step with the host.
 function endAskAudience() {
@@ -547,21 +568,29 @@ function endAskAudience() {
   }
 }
 
+// Renders the host's live results as a VERTICAL bar graph — one
+// upright bar per option (A-D), each growing to its percentage share
+// of votes cast so far, with the percentage labelled above each bar.
 function renderAudienceBars(votes) {
   const counts = [0, 0, 0, 0];
   Object.values(votes).forEach((idx) => { if (idx >= 0 && idx <= 3) counts[idx] += 1; });
   const total = counts.reduce((a, b) => a + b, 0) || 1;
+  const max = Math.max(...counts);
   const bars = $('#audienceBars');
   bars.innerHTML = '';
+  bars.className = 'audience-bars audience-bars-vertical';
   ['A', 'B', 'C', 'D'].forEach((label, i) => {
     const pct = Math.round((counts[i] / total) * 100);
-    const row = document.createElement('div');
-    row.className = 'audience-bar-row';
-    row.innerHTML = `
-      <span class="audience-bar-label">${label}</span>
-      <span class="audience-bar-track"><span class="audience-bar-fill" style="width:${pct}%"></span></span>
-      <span class="audience-bar-pct">${pct}%</span>`;
-    bars.appendChild(row);
+    const col = document.createElement('div');
+    col.className = `audience-vbar-col ${OPTION_META[i].cls}`;
+    col.innerHTML = `
+      <span class="audience-vbar-pct">${pct}%</span>
+      <span class="audience-vbar-track"><span class="audience-vbar-fill${counts[i] === max && counts[i] > 0 ? ' is-leading' : ''}" style="height:0%"></span></span>
+      <span class="audience-vbar-label">${label}</span>`;
+    bars.appendChild(col);
+    const fillEl = col.querySelector('.audience-vbar-fill');
+    void fillEl.offsetWidth;
+    requestAnimationFrame(() => { fillEl.style.height = pct + '%'; });
   });
 }
 
@@ -602,10 +631,6 @@ function endGame() {
   setTimeout(() => SoundFX.applause(), 700);
 }
 
-// Distinct colors per leaderboard row, reusing the same bold palette
-// as the answer tiles so the chart visually matches the rest of the app.
-const PLAYER_CHART_COLORS = ['var(--opt-b)', 'var(--opt-d)', 'var(--opt-c)', 'var(--opt-a)'];
-
 function renderGameOver() {
   const ranked = [...game.players].sort((a, b) => b.score - a.score);
   const table = $('#leaderboardTable');
@@ -616,44 +641,18 @@ function renderGameOver() {
     row.innerHTML = `
       <span class="leaderboard-rank">${i === 0 ? '👑' : `#${i + 1}`}</span>
       <span class="leaderboard-name">${p.name}</span>
-      <span class="leaderboard-score">${p.score} pts</span>`;
+      <span class="leaderboard-score" data-target="${p.score}">0 pts</span>`;
     table.appendChild(row);
-  });
 
-  const maxScore = Math.max(1, ...ranked.map((p) => p.score));
-  const chart = $('#scoreChart');
-  chart.innerHTML = '';
-  ranked.forEach((p, i) => {
-    const pct = Math.max(4, Math.round((Math.max(0, p.score) / maxScore) * 100));
-    const color = PLAYER_CHART_COLORS[i % PLAYER_CHART_COLORS.length];
-
-    const row = document.createElement('div');
-    row.className = 'score-bar-row';
-    row.innerHTML = `
-      <span class="score-bar-name">${p.name}</span>
-      <span class="score-bar-track">
-        <span class="score-bar-fill" style="width:0%;background:${color};">
-          <span class="score-bar-value">0</span>
-        </span>
-      </span>`;
-    chart.appendChild(row);
-
-    const fillEl = row.querySelector('.score-bar-fill');
-    const valueEl = row.querySelector('.score-bar-value');
-    // Force a reflow before changing the width, otherwise the browser
-    // can collapse the 0% → target% change into a single frame and the
-    // transition never visibly plays.
-    void fillEl.offsetWidth;
-    requestAnimationFrame(() => { fillEl.style.width = pct + '%'; });
-
-    // Count the score up from 0 rather than just dropping the final
-    // number in place — small touch, makes the results feel alive.
+    // Count each score up from 0 rather than dropping the final number
+    // in place — small touch, makes the ranking feel alive.
+    const scoreEl = row.querySelector('.leaderboard-score');
     const target = p.score;
-    const duration = 900;
+    const duration = 800;
     const startTime = performance.now();
     function tick(now) {
       const t = Math.min(1, (now - startTime) / duration);
-      valueEl.textContent = Math.round(target * t);
+      scoreEl.textContent = `${Math.round(target * t)} pts`;
       if (t < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
@@ -815,10 +814,7 @@ function renderAudienceOptions(options, roomId, timerEndsAt) {
   const grid = $('#audienceOptionsGrid');
   grid.innerHTML = '';
   options.forEach((opt, idx) => {
-    const btn = document.createElement('button');
-    btn.className = `option-btn ${OPTION_META[idx].cls}`;
-    btn.dataset.idx = idx;
-    btn.innerHTML = `<span class="option-shape">${OPTION_META[idx].shape}</span><span class="option-label-text">${'ABCD'[idx]}. ${opt}</span>`;
+    const btn = createOptionBar(idx, opt);
     btn.addEventListener('click', () => {
       if (audienceHasVotedThisRound) return;
       audienceHasVotedThisRound = true;
@@ -836,7 +832,7 @@ function renderAudienceOptions(options, roomId, timerEndsAt) {
   audienceCountdownInterval = setInterval(() => {
     const remaining = Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000));
     $('#audienceTimer').textContent = remaining > 0 ? `${remaining}s to vote` : "Time's up!";
-    $('#audienceTimerBar').style.width = Math.max(0, (remaining / 30) * 100) + '%';
+    $('#audienceTimerBar').style.width = Math.max(0, (remaining / ASK_AUDIENCE_SECONDS) * 100) + '%';
     if (remaining <= 0) clearInterval(audienceCountdownInterval);
   }, 500);
 }

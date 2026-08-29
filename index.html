@@ -116,12 +116,6 @@
         <button class="chip" data-val="20">20</button>
       </div>
 
-      <label class="field-label">Difficulty</label>
-      <div class="chip-row" id="difficultyRow">
-        <button class="chip chip-selected" data-val="all">All Levels</button>
-        <button class="chip" data-val="advanced">Advanced Only</button>
-      </div>
-
       <button id="startGameBtn" class="btn btn-primary btn-block">Start Game</button>
       <p class="hint-text">This creates a room code your audience can join from their phones.</p>
     </div>
@@ -141,44 +135,45 @@
         </div>
       </div>
 
-      <div class="scoreboard-strip" id="scoreboardStrip"></div>
+      <!-- Fixed-size quiz stage: question + options never change size
+           between questions, so the layout doesn't jump. -->
+      <div class="quiz-stage-wrap">
+        <div class="quiz-stage" id="quizStage">
+          <p class="question-text" id="questionText">Loading question…</p>
+          <div class="options-list" id="optionsGrid"></div>
+        </div>
+        <div class="stage-sweep" id="stageSweep" aria-hidden="true"></div>
+      </div>
 
-      <div class="game-columns">
-        <div class="game-main">
-          <div class="question-card">
-            <p class="question-text" id="questionText">Loading question…</p>
-            <div class="options-grid" id="optionsGrid"></div>
-          </div>
+      <div class="control-deck">
+        <div class="scoreboard-strip" id="scoreboardStrip"></div>
 
-          <div id="audienceResultsPanel" class="audience-results hidden">
-            <p class="field-label">🙌 Audience Says…</p>
-            <div id="audienceBars" class="audience-bars"></div>
-          </div>
-
-          <div class="host-action-row">
-            <button id="submitAnswerBtn" class="btn btn-primary" disabled>Submit Answer</button>
-            <button id="passBtn" class="btn btn-ghost">Pass / Reveal</button>
-            <button id="nextTurnBtn" class="btn btn-secondary hidden">Next Turn →</button>
-          </div>
-
-          <p id="explanationText" class="explanation-text hidden"></p>
+        <div id="audienceResultsPanel" class="audience-results hidden">
+          <p class="field-label">🙌 Audience Says…</p>
+          <div id="audienceBars" class="audience-bars"></div>
         </div>
 
-        <div class="game-side">
-          <p class="field-label side-label">Lifelines</p>
-          <div class="lifeline-col">
-            <button class="lifeline-btn" id="lifeline5050" data-lifeline="fiftyFifty">
-              <span class="lifeline-icon">➗</span> 50:50
-            </button>
-            <button class="lifeline-btn" id="lifelinePhone" data-lifeline="phoneAFriend">
-              <span class="lifeline-icon">📞</span> Phone a Friend
-            </button>
-            <button class="lifeline-btn" id="lifelineAudience" data-lifeline="askAudience">
-              <span class="lifeline-icon">🙌</span> Ask the Audience
-            </button>
-          </div>
-          <button id="restartMidGameBtn" class="btn btn-ghost btn-block small-btn">↺ Restart Game</button>
+        <div class="host-action-row">
+          <button id="submitAnswerBtn" class="btn btn-primary" disabled>Submit Answer</button>
+          <button id="passBtn" class="btn btn-ghost">Pass / Reveal</button>
+          <button id="nextTurnBtn" class="btn btn-secondary hidden">Next Turn →</button>
         </div>
+
+        <p id="explanationText" class="explanation-text hidden"></p>
+
+        <div class="lifeline-row">
+          <button class="lifeline-btn" id="lifeline5050" data-lifeline="fiftyFifty">
+            <span class="lifeline-icon">➗</span> 50:50
+          </button>
+          <button class="lifeline-btn" id="lifelinePhone" data-lifeline="phoneAFriend">
+            <span class="lifeline-icon">📞</span> Phone a Friend
+          </button>
+          <button class="lifeline-btn" id="lifelineAudience" data-lifeline="askAudience">
+            <span class="lifeline-icon">🙌</span> Ask the Audience
+          </button>
+        </div>
+
+        <button id="restartMidGameBtn" class="btn btn-ghost small-btn">↺ Restart Game</button>
       </div>
     </div>
   </section>
@@ -208,8 +203,8 @@
 
       <div id="audienceVotingPanel" class="hidden">
         <div class="timer-track"><div id="audienceTimerBar" class="timer-fill"></div></div>
-        <p class="field-label" id="audienceTimer">30s to vote</p>
-        <div class="options-grid" id="audienceOptionsGrid"></div>
+        <p class="field-label" id="audienceTimer">20s to vote</p>
+        <div class="options-list" id="audienceOptionsGrid"></div>
         <p id="audienceVoteConfirm" class="vote-confirm hidden">✅ Vote recorded! Watch the results fill in live.</p>
       </div>
     </div>
@@ -220,10 +215,8 @@
     <div class="stage-card center">
       <p class="eyebrow">Final Results</p>
       <h2 class="display-xl">🏆 Game Over</h2>
+      <p class="eyebrow chart-heading">Ranking, Best to Last</p>
       <div id="leaderboardTable" class="leaderboard-table"></div>
-
-      <p class="eyebrow chart-heading">📊 Score Comparison</p>
-      <div id="scoreChart" class="score-chart"></div>
 
       <div class="host-action-row center">
         <button id="rematchBtn" class="btn btn-primary">Rematch (Reset Scores)</button>
