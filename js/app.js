@@ -24,6 +24,73 @@ const FIREBASE_READY = isFirebaseConfigured();
 function showScreen(id) {
   $$('.screen').forEach((s) => s.classList.remove('active'));
   $(`#${id}`).classList.add('active');
+  // The home button only makes sense while a game/session is actually
+  // in progress — hide it on setup/menu/results screens.
+  const showHome = id === 'screen-host-game' || id === 'screen-audience-view';
+  $('#homeBtn').classList.toggle('hidden', !showHome);
+}
+
+// ---------- Kahoot-style answer tile colors + shapes ----------
+const OPTION_META = [
+  { shape: '▲', cls: 'opt-a' },
+  { shape: '◆', cls: 'opt-b' },
+  { shape: '●', cls: 'opt-c' },
+  { shape: '■', cls: 'opt-d' },
+];
+
+function voteCountsFromObj(votesObj) {
+  const counts = [0, 0, 0, 0];
+  Object.values(votesObj || {}).forEach((idx) => { if (idx >= 0 && idx <= 3) counts[idx] += 1; });
+  return counts;
+}
+
+// Live, animated color-fill showing each option's current share of
+// the votes — used on both the host's question tiles and every
+// audience member's own voting tiles, updating in real time as votes
+// come in (this is what makes the "ratio" visibly animate).
+function applyVoteFillToGrid(gridSelector, counts) {
+  const total = counts.reduce((a, b) => a + b, 0);
+  const max = Math.max(...counts);
+  $$(`${gridSelector} .option-btn`).forEach((btn) => {
+    const idx = parseInt(btn.dataset.idx, 10);
+    if (Number.isNaN(idx)) return;
+    let fill = btn.querySelector('.vote-fill');
+    let badge = btn.querySelector('.vote-pct-badge');
+    if (!fill) {
+      fill = document.createElement('span');
+      fill.className = 'vote-fill';
+      btn.insertBefore(fill, btn.firstChild);
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'vote-pct-badge hidden';
+      btn.appendChild(badge);
+    }
+    const pct = total > 0 ? Math.round((counts[idx] / total) * 100) : 0;
+    fill.style.width = pct + '%';
+    fill.classList.toggle('is-leading', total > 0 && max > 0 && counts[idx] === max);
+    badge.textContent = `${pct}%`;
+    badge.classList.toggle('hidden', total === 0);
+  });
+}
+
+// ---------- Confetti ----------
+function spawnConfetti(count = 50) {
+  const layer = $('#confettiLayer');
+  if (!layer) return;
+  const colors = ['var(--opt-a)', 'var(--opt-b)', 'var(--opt-c)', 'var(--opt-d)', 'var(--gold)'];
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const duration = 2.2 + Math.random() * 1.6;
+    const delay = Math.random() * 0.5;
+    piece.style.animationDuration = duration + 's';
+    piece.style.animationDelay = delay + 's';
+    layer.appendChild(piece);
+    setTimeout(() => piece.remove(), (duration + delay) * 1000 + 200);
+  }
 }
 
 // ---------- Global game state ----------
@@ -42,6 +109,9 @@ const game = {
   askAudienceActive: false,
   askAudienceVotesRef: null,
   askAudienceVotesHandler: null,
+  difficulty: 'all',
+  audienceRoomRef: null,
+  audienceRoomHandler: null,
 };
 
 // Tracks which voting round (by its timerEndsAt timestamp) the audience
@@ -116,6 +186,16 @@ $$('#questionsPerPlayerRow .chip').forEach((chip) => {
   });
 });
 
+let selectedDifficulty = 'all';
+$$('#difficultyRow .chip').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    $$('#difficultyRow .chip').forEach((c) => c.classList.remove('chip-selected'));
+    chip.classList.add('chip-selected');
+    selectedDifficulty = chip.dataset.val;
+    SoundFX.click();
+  });
+});
+
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing 0/O/1/I
   let id = '';
@@ -141,6 +221,7 @@ $('#startGameBtn').addEventListener('click', async () => {
 
   game.players = players;
   game.questionsPerPlayer = selectedQuestionsPerPlayer;
+  game.difficulty = selectedDifficulty;
   game.turnOrder = [];
   for (let q = 0; q < game.questionsPerPlayer; q++) {
     for (let p = 0; p < players.length; p++) game.turnOrder.push(p);
@@ -213,11 +294,13 @@ function loadNextQuestion() {
   // into the new question, however the previous turn ended.
   endAskAudience();
 
+  const difficultyOk = (q) => game.difficulty !== 'advanced' || q.tier === 'advanced';
+
   // pick a random unused question
-  let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id));
+  let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id) && difficultyOk(q));
   if (pool.length === 0) {
     game.usedQuestionIds.clear();
-    pool = BIBLE_QUESTIONS;
+    pool = BIBLE_QUESTIONS.filter(difficultyOk);
   }
   const q = pool[Math.floor(Math.random() * pool.length)];
   game.usedQuestionIds.add(q.id);
@@ -251,9 +334,9 @@ function renderHostGameScreen() {
   grid.innerHTML = '';
   game.currentQuestion.options.forEach((opt, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.textContent = opt;
+    btn.className = `option-btn ${OPTION_META[idx].cls}`;
     btn.dataset.idx = idx;
+    btn.innerHTML = `<span class="option-shape">${OPTION_META[idx].shape}</span><span class="option-label-text">${opt}</span>`;
     btn.addEventListener('click', () => handleOptionClick(idx, btn));
     grid.appendChild(btn);
   });
@@ -313,6 +396,7 @@ $('#submitAnswerBtn').addEventListener('click', () => {
     player.score += 10;
     player.correct += 1;
     SoundFX.correct();
+    spawnConfetti(16);
   } else {
     player.score -= 5;
     player.wrong += 1;
@@ -426,6 +510,7 @@ function startAskAudience() {
   game.askAudienceVotesHandler = (snapshot) => {
     const votes = snapshot.val() || {};
     renderAudienceBars(votes);
+    applyVoteFillToGrid('#optionsGrid', voteCountsFromObj(votes));
   };
   game.askAudienceVotesRef.on('value', game.askAudienceVotesHandler);
   game.askAudienceActive = true;
@@ -513,8 +598,13 @@ function endGame() {
   renderGameOver();
   showScreen('screen-gameover');
   SoundFX.fanfare();
+  spawnConfetti(90);
   setTimeout(() => SoundFX.applause(), 700);
 }
+
+// Distinct colors per leaderboard row, reusing the same bold palette
+// as the answer tiles so the chart visually matches the rest of the app.
+const PLAYER_CHART_COLORS = ['var(--opt-b)', 'var(--opt-d)', 'var(--opt-c)', 'var(--opt-a)'];
 
 function renderGameOver() {
   const ranked = [...game.players].sort((a, b) => b.score - a.score);
@@ -530,22 +620,55 @@ function renderGameOver() {
     table.appendChild(row);
   });
 
-  const maxScore = Math.max(1, ...ranked.map((p) => Math.abs(p.score)), ...ranked.map((p) => p.score));
+  const maxScore = Math.max(1, ...ranked.map((p) => p.score));
   const chart = $('#scoreChart');
   chart.innerHTML = '';
-  ranked.forEach((p) => {
+  ranked.forEach((p, i) => {
     const pct = Math.max(4, Math.round((Math.max(0, p.score) / maxScore) * 100));
+    const color = PLAYER_CHART_COLORS[i % PLAYER_CHART_COLORS.length];
+
     const row = document.createElement('div');
     row.className = 'score-bar-row';
     row.innerHTML = `
       <span class="score-bar-name">${p.name}</span>
-      <span class="score-bar-track"><span class="score-bar-fill" style="width:0%"></span></span>`;
+      <span class="score-bar-track">
+        <span class="score-bar-fill" style="width:0%;background:${color};">
+          <span class="score-bar-value">0</span>
+        </span>
+      </span>`;
     chart.appendChild(row);
-    requestAnimationFrame(() => { row.querySelector('.score-bar-fill').style.width = pct + '%'; });
+
+    const fillEl = row.querySelector('.score-bar-fill');
+    const valueEl = row.querySelector('.score-bar-value');
+    // Force a reflow before changing the width, otherwise the browser
+    // can collapse the 0% → target% change into a single frame and the
+    // transition never visibly plays.
+    void fillEl.offsetWidth;
+    requestAnimationFrame(() => { fillEl.style.width = pct + '%'; });
+
+    // Count the score up from 0 rather than just dropping the final
+    // number in place — small touch, makes the results feel alive.
+    const target = p.score;
+    const duration = 900;
+    const startTime = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      valueEl.textContent = Math.round(target * t);
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   });
 }
 
 $('#rematchBtn').addEventListener('click', () => {
+  resetAndRestartGame();
+});
+
+// Shared by "Rematch" (from the game-over screen) and "Restart Game"
+// (mid-game, from the host sidebar) — resets scores, lifelines, and
+// turn order, then jumps straight back into question 1.
+function resetAndRestartGame() {
+  endAskAudience();
   game.players.forEach((p) => {
     p.score = 0; p.correct = 0; p.wrong = 0;
     p.lifelinesUsed = { fiftyFifty: false, phoneAFriend: false, askAudience: false };
@@ -558,11 +681,48 @@ $('#rematchBtn').addEventListener('click', () => {
   }
   showScreen('screen-host-game');
   loadNextQuestion();
+}
+
+$('#restartMidGameBtn').addEventListener('click', () => {
+  const confirmed = confirm('Restart the game? Everyone\'s score will reset to 0.');
+  if (!confirmed) return;
+  SoundFX.click();
+  resetAndRestartGame();
 });
 
 $('#newGameBtn').addEventListener('click', () => {
   showScreen('screen-role');
 });
+
+// ============================================================
+// HOME BUTTON — leave the current game/session from anywhere
+// ============================================================
+$('#homeBtn').addEventListener('click', () => {
+  const confirmed = confirm('Leave and go back to the home screen? This ends your current session.');
+  if (!confirmed) return;
+  goHome();
+});
+
+function goHome() {
+  // Stop any host-side "Ask the Audience" machinery still running.
+  endAskAudience();
+  // Stop any audience-side room subscription / countdown still running.
+  if (game.audienceRoomRef && game.audienceRoomHandler) {
+    game.audienceRoomRef.off('value', game.audienceRoomHandler);
+    game.audienceRoomRef = null;
+    game.audienceRoomHandler = null;
+  }
+  if (audienceCountdownInterval) {
+    clearInterval(audienceCountdownInterval);
+    audienceCountdownInterval = null;
+  }
+  if (FIREBASE_READY && game.roomId) {
+    db.ref(`rooms/${game.roomId}/gameState`).set('ENDED').catch(() => {});
+  }
+  game.roomId = null;
+  $('#roomBadge').classList.add('hidden');
+  showScreen('screen-role');
+}
 
 // ============================================================
 // AUDIENCE JOIN + VIEW
@@ -599,11 +759,14 @@ let audienceHasVotedThisRound = false;
 
 function subscribeAudienceRoom(roomId) {
   const roomRef = db.ref(`rooms/${roomId}`);
-  roomRef.on('value', (snapshot) => {
+  const handler = (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
     renderAudienceView(data, roomId);
-  });
+  };
+  roomRef.on('value', handler);
+  game.audienceRoomRef = roomRef;
+  game.audienceRoomHandler = handler;
 }
 
 function renderAudienceView(data, roomId) {
@@ -635,6 +798,10 @@ function renderAudienceView(data, roomId) {
       $('#audienceVoteConfirm').classList.add('hidden');
       renderAudienceOptions(data.currentQuestion.options, roomId, ask.timerEndsAt);
     }
+    // Always refresh the live color-fill on the tiles — every device's
+    // vote updates this for everyone watching, in real time, whether
+    // or not this device has voted itself.
+    applyVoteFillToGrid('#audienceOptionsGrid', voteCountsFromObj(ask.votes));
   } else {
     $('#audienceVotingPanel').classList.add('hidden');
     $('#audienceWaiting').classList.remove('hidden');
@@ -649,11 +816,9 @@ function renderAudienceOptions(options, roomId, timerEndsAt) {
   grid.innerHTML = '';
   options.forEach((opt, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.style.color = 'var(--indigo)';
-    btn.style.background = 'var(--ivory)';
-    btn.style.borderColor = 'var(--parchment-2)';
-    btn.textContent = `${'ABCD'[idx]}. ${opt}`;
+    btn.className = `option-btn ${OPTION_META[idx].cls}`;
+    btn.dataset.idx = idx;
+    btn.innerHTML = `<span class="option-shape">${OPTION_META[idx].shape}</span><span class="option-label-text">${'ABCD'[idx]}. ${opt}</span>`;
     btn.addEventListener('click', () => {
       if (audienceHasVotedThisRound) return;
       audienceHasVotedThisRound = true;
@@ -666,10 +831,12 @@ function renderAudienceOptions(options, roomId, timerEndsAt) {
     grid.appendChild(btn);
   });
 
+  $('#audienceTimerBar').style.width = '100%';
   if (audienceCountdownInterval) clearInterval(audienceCountdownInterval);
   audienceCountdownInterval = setInterval(() => {
     const remaining = Math.max(0, Math.ceil((timerEndsAt - Date.now()) / 1000));
     $('#audienceTimer').textContent = remaining > 0 ? `${remaining}s to vote` : "Time's up!";
+    $('#audienceTimerBar').style.width = Math.max(0, (remaining / 30) * 100) + '%';
     if (remaining <= 0) clearInterval(audienceCountdownInterval);
   }, 500);
 }
