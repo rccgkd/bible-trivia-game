@@ -1,48 +1,51 @@
 /* ============================================================
-   Kingdom Quiz — Design System v2
-   A modern, bold, high-energy quiz-show interface (Kahoot-inspired)
-   built on a warm sanctuary palette. Light page background
-   throughout; boldness comes from big type and saturated
-   color-blocked answer tiles, not a dark theme.
+   Kingdom Quiz — Design System v3 (RCCG theme)
+   White background throughout, with the four colors drawn from the
+   RCCG emblem itself: Blue (love), Red (the blood of Jesus), White
+   (purity), Green (fruitfulness) — gold is kept only as a small
+   decorative fourth answer-tile color, not a brand color.
 
    Palette:
-     --ivory / --parchment    light surfaces (page + cards)
-     --indigo                 primary text + the question "stage"
-     --gold / --teal          brand accents
-     --opt-a..d                the four Kahoot-style answer colors
+     --ivory / --parchment    white page background + light card surfaces
+     --indigo                 RCCG blue — primary text + the question "stage"
+     --gold                   RCCG red — primary accent / calls to action
+     --teal                   RCCG green — secondary accent / success
+     --opt-a..d                answer-tile colors (red, blue, gold, green)
    Type:
-     Display: 'Fraunces' — big, bold (700-900), used generously
-     Body/UI: 'Manrope' — bold weights for buttons & labels
-     Data:    'JetBrains Mono' — scores, timers, room codes
+     A clean, modern Helvetica-style sans throughout — 'Helvetica Neue' /
+     Arial where installed, 'Inter' as the embedded web-font fallback so
+     it renders identically everywhere. 'JetBrains Mono' stays only for
+     scores, timers, and the room code — small numeric/technical accents.
    ============================================================ */
 
 :root {
-  --ivory: #FBF8F2;
-  --parchment: #F3EDE0;
-  --parchment-2: #EAE1CC;
-  --indigo: #1F2A44;
-  --indigo-2: #48557A;
-  --gold: #C89B3C;
-  --gold-light: #E4C978;
-  --teal: #2F6F6B;
-  --teal-light: #DCEDEB;
+  --ivory: #FFFFFF;
+  --parchment: #F4F6F9;
+  --parchment-2: #E1E7EF;
+  --indigo: #0D2B57;
+  --indigo-2: #45577A;
+  --gold: #C8102E;
+  --gold-light: #FF8A80;
+  --teal: #1E7A46;
+  --teal-light: #E1F3E7;
   --ember: #B3452C;
   --ember-light: #F6DED6;
 
-  /* Kahoot-style answer tile colors */
-  --opt-a: #E8483C;   /* coral red   ▲ */
+  /* Answer tile colors */
+  --opt-a: #E8483C;   /* red */
   --opt-a-dk: #C33528;
-  --opt-b: #2F7DE1;   /* ocean blue  ◆ */
-  --opt-b-dk: #1F5FB8;
-  --opt-c: #F2AC1F;   /* sunflower   ● */
+  --opt-b: #1E56A8;   /* blue */
+  --opt-b-dk: #164281;
+  --opt-c: #F2AC1F;   /* gold */
   --opt-c-dk: #CC8D0D;
-  --opt-d: #17A589;   /* emerald     ■ */
-  --opt-d-dk: #0F7A66;
+  --opt-d: #1E7A46;   /* green */
+  --opt-d-dk: #145C34;
 
   --radius: 20px;
   --radius-lg: 26px;
-  --shadow: 0 10px 30px -12px rgba(31, 42, 68, 0.25);
-  --shadow-lg: 0 24px 60px -20px rgba(31, 42, 68, 0.35);
+  --shadow: 0 10px 30px -12px rgba(13, 43, 87, 0.18);
+  --shadow-lg: 0 24px 60px -20px rgba(13, 43, 87, 0.28);
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, 'Inter', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -52,12 +55,12 @@ html, body {
   padding: 0;
   background: var(--ivory);
   color: var(--indigo);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-sans);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
+h1, h2, h3 { font-family: var(--font-sans); margin: 0; }
 .br-mobile { display: block; }
 @media (min-width: 640px) { .br-mobile { display: inline; } }
 
@@ -93,7 +96,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 /* ---------- Top bar ---------- */
 .topbar { position: sticky; top: 0; z-index: 10; padding: 16px 20px 0; backdrop-filter: blur(6px); }
 .topbar-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-.brand { font-family: 'Fraunces', serif; font-weight: 800; letter-spacing: 0.01em; color: var(--indigo); font-size: 1.15rem; }
+.brand { font-family: var(--font-sans); font-weight: 800; letter-spacing: 0.01em; color: var(--indigo); font-size: 1.15rem; }
 .topbar-right { display: flex; align-items: center; gap: 10px; }
 .room-badge { font-family: 'JetBrains Mono', monospace; font-weight: 800; background: var(--indigo); color: var(--gold-light); padding: 7px 14px; border-radius: 999px; letter-spacing: 0.14em; font-size: 0.88rem; }
 .icon-btn { background: var(--parchment); border: 1px solid var(--parchment-2); border-radius: 999px; width: 42px; height: 42px; cursor: pointer; font-size: 1.05rem; transition: transform 0.15s ease, box-shadow 0.15s ease; }
@@ -119,7 +122,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 /* ---------- Role selection ---------- */
 .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
 @media (max-width: 560px) { .role-grid { grid-template-columns: 1fr; } }
-.role-card { background: var(--ivory); border: 2px solid var(--parchment-2); border-radius: 18px; padding: 28px 20px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: transform 0.18s cubic-bezier(.2,.9,.3,1.3), border-color 0.15s ease, box-shadow 0.15s ease; font-family: 'Manrope', sans-serif; position: relative; overflow: hidden; }
+.role-card { background: var(--ivory); border: 2px solid var(--parchment-2); border-radius: 18px; padding: 28px 20px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: transform 0.18s cubic-bezier(.2,.9,.3,1.3), border-color 0.15s ease, box-shadow 0.15s ease; font-family: var(--font-sans); position: relative; overflow: hidden; }
 .role-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: var(--shadow-lg); }
 .role-card-a:hover { border-color: var(--opt-a); }
 .role-card-b:hover { border-color: var(--opt-b); }
@@ -136,12 +139,12 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .pill-bad { background: var(--ember-light); color: var(--ember); }
 
 /* ---------- Buttons ---------- */
-.btn { font-family: 'Manrope', sans-serif; font-weight: 800; border: none; border-radius: 14px; padding: 15px 22px; font-size: 1rem; cursor: pointer; transition: transform 0.12s cubic-bezier(.2,.9,.3,1.4), filter 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease; position: relative; }
+.btn { font-family: var(--font-sans); font-weight: 800; border: none; border-radius: 14px; padding: 15px 22px; font-size: 1rem; cursor: pointer; transition: transform 0.12s cubic-bezier(.2,.9,.3,1.4), filter 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease; position: relative; }
 .btn:active { transform: scale(0.96); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: var(--indigo); color: var(--gold-light); box-shadow: 0 8px 22px -10px rgba(31,42,68,0.55); }
+.btn-primary { background: var(--indigo); color: #FFFFFF; box-shadow: 0 8px 22px -10px rgba(13,43,87,0.55); }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-2px); }
-.btn-secondary { background: var(--gold); color: var(--indigo); box-shadow: 0 8px 22px -10px rgba(200,155,60,0.6); }
+.btn-secondary { background: var(--gold); color: #FFFFFF; box-shadow: 0 8px 22px -10px rgba(200,16,46,0.5); }
 .btn-secondary:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
 .btn-ghost { background: transparent; color: var(--indigo); border: 2px solid var(--parchment-2); }
 .btn-ghost:hover { border-color: var(--indigo); }
@@ -150,10 +153,10 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 
 /* ---------- Host setup form ---------- */
 .field-label { display: block; font-weight: 800; margin: 20px 0 8px; font-size: 0.92rem; color: var(--indigo); }
-.field-select { width: 100%; padding: 13px 14px; border-radius: 12px; border: 2px solid var(--parchment-2); background: var(--ivory); font-family: 'Manrope', sans-serif; font-size: 1rem; color: var(--indigo); }
+.field-select { width: 100%; padding: 13px 14px; border-radius: 12px; border: 2px solid var(--parchment-2); background: var(--ivory); font-family: var(--font-sans); font-size: 1rem; color: var(--indigo); }
 .code-input { text-align: center; letter-spacing: 0.35em; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.5rem; text-transform: uppercase; }
 .player-name-grid { display: grid; gap: 10px; margin-top: 10px; }
-.player-name-grid input { padding: 13px 14px; border-radius: 12px; border: 2px solid var(--parchment-2); background: var(--ivory); font-family: 'Manrope', sans-serif; font-size: 1rem; }
+.player-name-grid input { padding: 13px 14px; border-radius: 12px; border: 2px solid var(--parchment-2); background: var(--ivory); font-family: var(--font-sans); font-size: 1rem; }
 .chip-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .chip { border: 2px solid var(--parchment-2); background: var(--ivory); border-radius: 999px; padding: 9px 20px; font-family: 'JetBrains Mono', monospace; font-weight: 800; cursor: pointer; transition: all 0.15s ease; }
 .chip:hover { border-color: var(--gold); }
@@ -180,7 +183,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .quiz-stage {
   background: radial-gradient(ellipse at 50% -10%, #2a3a68 0%, #131b34 55%, #0b1024 100%);
   border-radius: var(--radius-lg);
-  box-shadow: 0 30px 70px -20px rgba(5, 8, 20, 0.65), inset 0 0 0 1px rgba(228, 201, 120, 0.18);
+  box-shadow: 0 30px 70px -20px rgba(5, 8, 20, 0.65), inset 0 0 0 1px rgba(200, 16, 46, 0.18);
   padding: 40px 34px;
   min-height: clamp(420px, 58vh, 600px);
   display: flex;
@@ -193,26 +196,28 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .quiz-stage::before {
   /* faint radial "spotlight" glow, purely decorative */
   content: ""; position: absolute; top: -20%; left: 50%; width: 140%; height: 90%;
-  transform: translateX(-50%); background: radial-gradient(ellipse, rgba(228,201,120,0.10) 0%, transparent 65%);
+  transform: translateX(-50%); background: radial-gradient(ellipse, rgba(255,255,255,0.09) 0%, transparent 65%);
   pointer-events: none;
 }
 .question-text {
-  font-family: 'Fraunces', serif; font-weight: 700; color: var(--ivory);
+  font-family: var(--font-sans); font-weight: 700; color: var(--ivory);
   font-size: clamp(1.25rem, 2.6vw, 1.9rem); line-height: 1.45; text-align: center;
-  max-width: 780px; margin: 0 auto; position: relative; z-index: 1;
+  max-width: 820px; margin: 0 auto; position: relative; z-index: 1;
 }
 
-.options-list { display: flex; flex-direction: column; gap: 12px; max-width: 780px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
+/* Two answers side by side, wrapping to one column only on narrow phones. */
+.options-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 820px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
+@media (max-width: 640px) { .options-list { grid-template-columns: 1fr; } }
 
 .option-btn {
   --opt-color: var(--opt-b);
-  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border: 2px solid rgba(228, 201, 120, 0.35);
+  background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  border: 2px solid rgba(255, 255, 255, 0.22);
   color: var(--ivory);
-  border-radius: 999px;
-  padding: 14px 20px 14px 14px;
+  border-radius: 18px;
+  padding: 16px 18px;
   display: flex; align-items: center; gap: 14px;
-  text-align: left; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 1.02rem;
+  text-align: left; font-family: var(--font-sans); font-weight: 700; font-size: 1.02rem;
   cursor: pointer; position: relative; overflow: hidden;
   transition: transform 0.15s cubic-bezier(.2,.9,.3,1.4), box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   animation: option-in 0.4s ease backwards;
@@ -221,9 +226,9 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .option-btn:nth-child(2) { animation-delay: 0.08s; }
 .option-btn:nth-child(3) { animation-delay: 0.14s; }
 .option-btn:nth-child(4) { animation-delay: 0.2s; }
-@keyframes option-in { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes option-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.option-btn:hover:not(:disabled) { border-color: var(--gold-light); background: linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)); transform: translateX(4px); }
+.option-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.5); background: linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04)); transform: translateY(-3px); }
 
 .option-badge {
   flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px;
@@ -241,7 +246,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .option-label-text { position: relative; z-index: 2; flex: 1; }
 .option-result-icon { flex-shrink: 0; font-size: 1.3rem; position: relative; z-index: 2; }
 
-.option-btn.selected { border-color: var(--gold-light); box-shadow: 0 0 0 2px rgba(228,201,120,0.4), 0 0 24px -4px rgba(228,201,120,0.5); }
+.option-btn.selected { border-color: var(--gold-light); box-shadow: 0 0 0 2px rgba(255,138,128,0.4), 0 0 24px -4px rgba(255,138,128,0.5); }
 
 /* Correct / wrong reveal cues — clear color, glow, icon, AND motion,
    so the result reads unambiguously even without sound. */
@@ -266,7 +271,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .stage-sweep.sweep-active { animation: sweep-fade 0.7s ease; }
 .stage-sweep.sweep-active::after {
   content: ""; position: absolute; top: 0; left: -30%; width: 30%; height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(228,201,120,0.55), transparent);
+  background: linear-gradient(100deg, transparent, rgba(255,138,128,0.6), transparent);
   animation: sweep-move 0.7s ease;
 }
 @keyframes sweep-fade { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
@@ -280,7 +285,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
 .control-deck { display: flex; flex-direction: column; gap: 16px; max-width: 780px; margin: 0 auto; width: 100%; }
 
 .lifeline-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.lifeline-btn { flex: 1 1 auto; min-width: 130px; background: var(--ivory); border: 2px solid var(--parchment-2); border-radius: 14px; padding: 14px 14px; cursor: pointer; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease; }
+.lifeline-btn { flex: 1 1 auto; min-width: 130px; background: var(--ivory); border: 2px solid var(--parchment-2); border-radius: 14px; padding: 14px 14px; cursor: pointer; font-family: var(--font-sans); font-weight: 800; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease; }
 .lifeline-btn:hover:not(:disabled) { border-color: var(--gold); transform: translateY(-2px); box-shadow: var(--shadow); }
 .lifeline-btn:disabled { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
 .lifeline-icon { font-size: 1.15rem; }
@@ -344,4 +349,38 @@ h1, h2, h3 { font-family: 'Fraunces', serif; margin: 0; }
   .question-text { font-size: clamp(1.6rem, 2vw, 2.15rem); }
   .option-btn { padding: 16px 24px 16px 16px; font-size: 1.14rem; }
   .btn { padding: 16px 26px; font-size: 1.05rem; }
+}
+
+/* ---------- Host screen: fit entirely on one page, no scrolling ----------
+   On a PC/projector screen, the header, question stage, and every
+   control below it should all be visible together without the host
+   needing to scroll during the live game. */
+@media (min-width: 1024px) {
+  #screen-host-game.active {
+    display: flex;
+    align-items: center;
+    height: calc(100vh - 108px);
+    min-height: 560px;
+  }
+  #screen-host-game .host-layout {
+    width: 100%;
+    max-height: 100%;
+    gap: 12px;
+    justify-content: center;
+  }
+  #screen-host-game .host-header { padding: 12px 22px; }
+  #screen-host-game .quiz-stage {
+    padding: 26px 40px;
+    min-height: 0;
+    max-height: 44vh;
+    gap: 18px;
+  }
+  #screen-host-game .question-text { font-size: clamp(1.25rem, 1.9vw, 1.7rem); max-height: 130px; overflow: hidden; }
+  #screen-host-game .option-btn { padding: 12px 16px; font-size: 0.98rem; }
+  #screen-host-game .option-badge { width: 28px; height: 28px; }
+  #screen-host-game .control-deck { gap: 10px; }
+  #screen-host-game .scoreboard-chip { padding: 6px 13px; font-size: 0.78rem; }
+  #screen-host-game .lifeline-btn { padding: 10px 12px; font-size: 0.82rem; }
+  #screen-host-game .host-action-row .btn { padding: 12px 20px; font-size: 0.92rem; }
+  #screen-host-game .explanation-text { padding: 10px 14px; font-size: 0.86rem; max-height: 90px; overflow-y: auto; }
 }
