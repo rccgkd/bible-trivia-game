@@ -393,37 +393,50 @@ h1, h2, h3 { font-family: var(--font-sans); margin: 0; }
   .btn { padding: 17px 28px; font-size: 1.18rem; }
 }
 
-/* ---------- Host screen: fit entirely on one page, no scrolling ----------
-   With the persistent score bar removed, the question stage now
-   claims nearly the full viewport height on a PC/projector screen —
-   header, question, all four options, and every control below are
-   all visible together without the host needing to scroll. */
+/* ---------- Host screen: fit the page, and never clip content ----------
+   The stage sizes itself generously and the controls beneath it are
+   kept compact, so everything normally fits one screen on a PC/
+   projector. If a question is ever taller than the available space,
+   the stage scrolls WITHIN its own rounded box (safe, contained)
+   instead of the text silently overflowing past the box's border. */
 @media (min-width: 1024px) {
   #screen-host-game.active {
     display: flex;
-    height: calc(100vh - 96px);
-    min-height: 600px;
+    height: calc(100vh - 90px);
+    min-height: 640px;
   }
   #screen-host-game .host-layout {
     width: 100%;
+    max-width: 1600px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
   }
   #screen-host-game .quiz-stage-wrap { flex: 1 1 auto; min-height: 0; display: flex; }
   #screen-host-game .quiz-stage {
     flex: 1 1 auto;
     min-height: 0;
-    padding: 36px 52px;
-    gap: 24px;
+    padding: 30px 56px;
+    gap: 22px;
+    overflow-y: auto;
+    /* "safe center" falls back to top-aligned if content is taller
+       than the box, instead of hiding the overflow off both edges —
+       this is what was clipping the turn-row and the last option. */
+    justify-content: safe center;
   }
-  #screen-host-game .question-text { font-size: clamp(1.9rem, 3vw, 2.9rem); }
-  #screen-host-game .option-btn { padding: 18px 22px; font-size: 1.28rem; }
-  #screen-host-game .option-badge { width: 38px; height: 38px; }
-  #screen-host-game .option-badge span { font-size: 1.1rem; }
-  #screen-host-game .control-deck { flex-shrink: 0; gap: 12px; }
-  #screen-host-game .lifeline-btn { padding: 13px 16px; font-size: 1.05rem; }
-  #screen-host-game .host-action-row .btn { padding: 15px 24px; font-size: 1.1rem; }
-  #screen-host-game .explanation-text { padding: 12px 16px; font-size: 0.98rem; max-height: 110px; overflow-y: auto; }
+  #screen-host-game .question-text,
+  #screen-host-game .options-list { max-width: 1300px; }
+  #screen-host-game .question-text { font-size: clamp(1.7rem, 2.6vw, 2.5rem); }
+  #screen-host-game .option-btn { padding: 14px 18px; font-size: 1.14rem; }
+  #screen-host-game .option-badge { width: 34px; height: 34px; }
+  #screen-host-game .option-badge span { font-size: 1rem; }
+  #screen-host-game .control-deck { flex-shrink: 0; gap: 8px; }
+  #screen-host-game .lifeline-row { gap: 8px; }
+  #screen-host-game .lifeline-btn { padding: 8px 12px; font-size: 0.82rem; min-width: 110px; }
+  #screen-host-game .lifeline-icon { font-size: 0.95rem; }
+  #screen-host-game .host-action-row { gap: 8px; }
+  #screen-host-game .host-action-row .btn { padding: 10px 18px; font-size: 0.9rem; }
+  #screen-host-game .small-btn { padding: 7px 12px; font-size: 0.76rem; margin-top: 0; }
+  #screen-host-game .explanation-text { padding: 10px 14px; font-size: 0.9rem; max-height: 80px; overflow-y: auto; }
 }
