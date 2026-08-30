@@ -103,6 +103,30 @@ function spawnConfetti(count = 50) {
   }
 }
 
+// Big, brief pop-up shown right after a question is answered/passed —
+// this is now the ONLY place the player's score appears during the
+// game (the persistent scoreboard bar was removed to give the stage
+// more room). Shows the round's points change and the running total,
+// then fades itself out automatically.
+function showScorePopup(delta, total, label) {
+  const tone = delta > 0 ? 'is-good' : delta < 0 ? 'is-bad' : 'is-neutral';
+  const deltaText = delta > 0 ? `+${delta}` : `${delta}`;
+  const popup = document.createElement('div');
+  popup.className = 'score-popup';
+  popup.innerHTML = `
+    <div class="score-popup-card ${tone}">
+      <span class="score-popup-label">${label}</span>
+      <span class="score-popup-delta">${deltaText} pts</span>
+      <span class="score-popup-total">Total: ${total} pts</span>
+    </div>`;
+  document.body.appendChild(popup);
+  requestAnimationFrame(() => popup.classList.add('show'));
+  setTimeout(() => {
+    popup.classList.remove('show');
+    setTimeout(() => popup.remove(), 400);
+  }, 2600);
+}
+
 // ---------- Global game state ----------
 const game = {
   players: [],              // [{name, score, correct, wrong}]
@@ -152,7 +176,7 @@ $$('.role-card').forEach((card) => {
         alert("The host hasn't finished setting up the online room yet (Firebase isn't configured). Ask them to complete the setup guide, then try again.");
         return;
       }
-      showScreen('screen-audience-join');
+      showScreen('screen-audience-tutorial');
     }
   });
 });
@@ -164,6 +188,14 @@ $('#rulesContinueBtn').addEventListener('click', () => {
   SoundFX.click();
   renderPlayerNameInputs(2);
   showScreen('screen-host-setup');
+});
+
+// ============================================================
+// SCREEN: AUDIENCE TUTORIAL
+// ============================================================
+$('#audienceTutorialContinueBtn').addEventListener('click', () => {
+  SoundFX.click();
+  showScreen('screen-audience-join');
 });
 
 // ============================================================
@@ -330,19 +362,8 @@ function loadNextQuestion() {
 
 function renderHostGameScreen() {
   const player = currentPlayer();
-  $('#activePlayerLabel').textContent = `${player.name}'s turn`;
-  $('#scoreboardActive').textContent = `${player.score} pts`;
+  $('#activePlayerLabel').textContent = `🎙️ ${player.name}'s turn`;
   $('#roundLabel').textContent = `Question ${game.turnIndex + 1} of ${game.turnOrder.length}`;
-
-  // scoreboard strip
-  const strip = $('#scoreboardStrip');
-  strip.innerHTML = '';
-  game.players.forEach((p, i) => {
-    const chip = document.createElement('div');
-    chip.className = 'scoreboard-chip' + (i === game.turnOrder[game.turnIndex] ? ' is-active' : '');
-    chip.textContent = `${p.name}: ${p.score}`;
-    strip.appendChild(chip);
-  });
 
   // question + options
   $('#questionText').textContent = game.currentQuestion.question;
@@ -415,12 +436,13 @@ $('#submitAnswerBtn').addEventListener('click', () => {
     player.correct += 1;
     SoundFX.correct();
     spawnConfetti(16);
+    showScorePopup(10, player.score, `Correct, ${player.name}!`);
   } else {
     player.score -= 5;
     player.wrong += 1;
     SoundFX.wrong();
+    showScorePopup(-5, player.score, `Not quite, ${player.name}.`);
   }
-  $('#scoreboardActive').textContent = `${player.score} pts`;
   lockOptionsAndReveal(game.selectedOptionIndex);
   syncRoomPlayers();
 });
@@ -428,6 +450,8 @@ $('#submitAnswerBtn').addEventListener('click', () => {
 $('#passBtn').addEventListener('click', () => {
   if (game.answered) return;
   SoundFX.click();
+  const player = currentPlayer();
+  showScorePopup(0, player.score, `${player.name} passed`);
   lockOptionsAndReveal(-1);
 });
 
