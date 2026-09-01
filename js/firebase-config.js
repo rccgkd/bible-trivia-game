@@ -12,12 +12,13 @@
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDVK3E7Sc7LGAFfyF_U9qaH4rIT2PU3BZM",
-  authDomain: "kingdom-quiz-feeb8.firebaseapp.com",
-  projectId: "kingdom-quiz-feeb8",
-  storageBucket: "kingdom-quiz-feeb8.firebasestorage.app",
-  messagingSenderId: "226438871312",
-  appId: "1:226438871312:web:c5bf956ad036d43d310d95"
+  apiKey: "PASTE_YOUR_API_KEY_HERE",
+  authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://PASTE_YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
 };
 
 // Initialize Firebase (compat SDK — simplest for beginners, no build tools needed)

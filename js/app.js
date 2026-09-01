@@ -143,7 +143,7 @@ const game = {
   askAudienceActive: false,
   askAudienceVotesRef: null,
   askAudienceVotesHandler: null,
-  difficulty: 'all',
+  category: 'bible',
   audienceRoomRef: null,
   audienceRoomHandler: null,
 };
@@ -228,6 +228,21 @@ $$('#questionsPerPlayerRow .chip').forEach((chip) => {
   });
 });
 
+const CATEGORY_HINTS = {
+  bible: 'Names, places, numbers, and events straight from Scripture.',
+  history: 'The story of the Christian faith from the Day of Pentecost through the modern era.',
+};
+let selectedCategory = 'bible';
+$$('#categoryRow .chip').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    $$('#categoryRow .chip').forEach((c) => c.classList.remove('chip-selected'));
+    chip.classList.add('chip-selected');
+    selectedCategory = chip.dataset.val;
+    $('#categoryHint').textContent = CATEGORY_HINTS[selectedCategory] || '';
+    SoundFX.click();
+  });
+});
+
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing 0/O/1/I
   let id = '';
@@ -253,6 +268,7 @@ $('#startGameBtn').addEventListener('click', async () => {
 
   game.players = players;
   game.questionsPerPlayer = selectedQuestionsPerPlayer;
+  game.category = selectedCategory;
   game.turnOrder = [];
   for (let q = 0; q < game.questionsPerPlayer; q++) {
     for (let p = 0; p < players.length; p++) game.turnOrder.push(p);
@@ -325,11 +341,16 @@ function loadNextQuestion() {
   // into the new question, however the previous turn ended.
   endAskAudience();
 
+  // Only pull questions from the selected category — an absent
+  // `category` field on a question means it's part of the (default)
+  // Bible set.
+  const inCategory = (q) => (q.category || 'bible') === game.category;
+
   // pick a random unused question
-  let pool = BIBLE_QUESTIONS.filter((q) => !game.usedQuestionIds.has(q.id));
+  let pool = BIBLE_QUESTIONS.filter((q) => inCategory(q) && !game.usedQuestionIds.has(q.id));
   if (pool.length === 0) {
     game.usedQuestionIds.clear();
-    pool = BIBLE_QUESTIONS;
+    pool = BIBLE_QUESTIONS.filter(inCategory);
   }
   const q = pool[Math.floor(Math.random() * pool.length)];
   game.usedQuestionIds.add(q.id);
