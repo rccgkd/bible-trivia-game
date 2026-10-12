@@ -2,299 +2,516 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Kingdom Quiz — Bible Trivia Night</title>
+<meta name="description" content="A free, host-led Bible trivia game for church game nights. One screen runs the game and everyone else joins from their phone to vote. 750 questions across the Bible and Church History." />
+<link rel="canonical" href="%SITE_URL%" />
+<meta name="robots" content="index, follow" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#ffffff" />
+<meta name="application-name" content="Kingdom Quiz" />
+<meta name="apple-mobile-web-app-title" content="Kingdom Quiz" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<!-- Content Security Policy. Firebase (audience voting) is the only third party. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
 
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Social previews -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Kingdom Quiz" />
+<meta property="og:title" content="Kingdom Quiz — Bible Trivia Night" />
+<meta property="og:description" content="A host-led Bible trivia game for church game nights. Run it on one screen; everyone joins from their phone." />
+<meta property="og:url" content="%SITE_URL%" />
+<meta property="og:image" content="%SITE_URL%assets/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Kingdom Quiz: a four-color rose window beside the words Kingdom Quiz and Bible trivia night." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Kingdom Quiz — Bible Trivia Night" />
+<meta name="twitter:description" content="A host-led Bible trivia game for church game nights. Run it on one screen; everyone joins from their phone." />
+<meta name="twitter:image" content="%SITE_URL%assets/og-image.png" />
 
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<!-- Icons and manifest -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="favicon.ico" sizes="48x48" />
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+<link rel="manifest" href="manifest.webmanifest" />
 
+<!-- Sets light or dark before first paint so the page never flashes the wrong theme -->
+<script src="js/theme-init.js"></script>
+
+<link rel="preload" href="assets/fonts/bricolage-700.woff" as="font" type="font/woff" crossorigin />
+<link rel="preload" href="assets/fonts/instrument-400.woff" as="font" type="font/woff" crossorigin />
+<link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/style.css" />
+<script type="module" src="js/app.js"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Kingdom Quiz",
+  "description": "A host-led Bible trivia game for church game nights, with 600 Bible questions and 150 Church History questions.",
+  "url": "%SITE_URL%",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "isAccessibleForFree": true,
+  "inLanguage": "en"
+}
+</script>
 </head>
 <body>
 
-<!-- Ambient animated background: floating gradient blobs + stained-glass rosette -->
-<div class="bg-blobs" aria-hidden="true">
-  <span class="blob blob-a"></span>
-  <span class="blob blob-b"></span>
-  <span class="blob blob-c"></span>
-</div>
-<svg class="rosette" viewBox="0 0 600 600" aria-hidden="true">
-  <g>
-    <circle cx="300" cy="300" r="280" class="rosette-ring" />
-    <circle cx="300" cy="300" r="220" class="rosette-ring" />
-    <circle cx="300" cy="300" r="160" class="rosette-ring" />
-  </g>
+<!-- ============ Icon sprite (stroke icons, 24px grid) ============ -->
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-turns" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0V4z"/><path d="M8 6H5a1 1 0 0 0-1 1c0 2.2 1.8 4 4 4M16 6h3a1 1 0 0 1 1 1c0 2.2-1.8 4-4 4"/><path d="M12 14v4M8.5 21h7M9.5 18h5"/></symbol>
+    <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3.5" y="7" width="11" height="14" rx="2"/><path d="M8.5 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 21a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3.5 19h17M4.5 7l4.5 5 3-7 3 7 4.5-5-1.5 12h-13L4.5 7z"/></symbol>
+    <symbol id="i-split" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
+    <symbol id="i-call" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/></symbol>
+    <symbol id="i-vote" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.5l3 3 5-6"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></symbol>
+    <symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11L12 3.5 20.5 11"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-6h4v6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6L6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5L19.5 7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></symbol>
+    <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7V5z"/><path d="M18 5v14"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></symbol>
+    <symbol id="i-church" viewBox="0 0 24 24"><path d="M12 2v5M10 4h4"/><path d="M12 7l6 4v9H6v-9l6-4z"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><path d="M5 9h15M4 15h15M10 3.5L8 20.5M16 3.5L14 20.5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19L12 3.5z"/><path d="M12 10v4.5M12 17.5h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5h.01"/></symbol>
+
+    <!-- Brand mark: four lobes in the four answer colors, a cross at the heart -->
+    <symbol id="logo-mark" viewBox="0 0 64 64">
+      <circle cx="32" cy="18" r="13" fill="#c8102e" stroke="currentColor" stroke-width="2.5"/>
+      <circle cx="46" cy="32" r="13" fill="#1e56a8" stroke="currentColor" stroke-width="2.5"/>
+      <circle cx="32" cy="46" r="13" fill="#f2ac1f" stroke="currentColor" stroke-width="2.5"/>
+      <circle cx="18" cy="32" r="13" fill="#1e7a46" stroke="currentColor" stroke-width="2.5"/>
+      <circle cx="32" cy="32" r="8.5" fill="#081a3a" stroke="currentColor" stroke-width="2"/>
+      <path d="M32 26.5v11M27.5 31h9" stroke="#f6c453" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    </symbol>
+  </defs>
 </svg>
 
-<!-- Confetti burst layer (populated by JS on correct answers / winner reveal) -->
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- Screen-reader announcements (scores, results, errors) -->
+<div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Confetti burst layer (decorative) -->
 <div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
 
-<header class="topbar">
-  <div class="topbar-inner">
-    <span class="brand">✦ Kingdom Quiz</span>
-    <div class="topbar-right">
-      <span id="roomBadge" class="room-badge hidden"></span>
-      <button id="homeBtn" class="icon-btn hidden" title="Go home">🏠</button>
-      <button id="muteBtn" class="icon-btn" title="Mute sound">🔊</button>
+<header class="site-header" id="siteHeader">
+  <div class="header-inner">
+    <span class="brand">
+      <svg class="logo" aria-hidden="true" focusable="false"><use href="#logo-mark"/></svg>
+      <span class="brand-name">Kingdom Quiz</span>
+    </span>
+    <div class="header-actions">
+      <span id="roomBadge" class="room-badge" hidden></span>
+      <button id="homeBtn" class="icon-btn" type="button" aria-label="Leave and go home" title="Leave and go home" hidden>
+        <svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>
+      </button>
+      <button id="muteBtn" class="icon-btn" type="button" aria-label="Sound is on. Turn sound off" aria-pressed="false" title="Sound on">
+        <svg class="icon icon-on" aria-hidden="true"><use href="#i-volume"/></svg>
+        <svg class="icon icon-off" aria-hidden="true"><use href="#i-volume-off"/></svg>
+      </button>
+      <button id="themeBtn" class="icon-btn" type="button" aria-label="Switch to dark theme" title="Switch theme">
+        <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+        <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+      </button>
     </div>
   </div>
 </header>
 
-<main id="app">
+<main id="main" class="app" tabindex="-1">
 
-  <!-- ============ SCREEN: ROLE SELECT ============ -->
-  <section id="screen-role" class="screen narrow active">
-    <div class="stage-card center">
-      <p class="eyebrow">Trivia Night</p>
-      <h1 class="display-xl">Kingdom<br class="br-mobile"> Quiz</h1>
-      <p class="subtitle">A host-led Bible trivia game for church game nights — gather round, pick a role, and let's begin.</p>
-      <div class="role-grid">
-        <button class="role-card role-card-a" data-role="host">
-          <span class="role-icon">🎙️</span>
-          <span class="role-title">Host the Game</span>
+  <noscript>
+    <div class="notice notice-warning">
+      <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+      <p>Kingdom Quiz runs in your browser and needs JavaScript. Turn it on for this page, then reload.</p>
+    </div>
+  </noscript>
+
+  <!-- ============ SCREEN: HOME / ROLE SELECT ============ -->
+  <section id="screen-role" class="screen screen-home" aria-labelledby="homeTitle">
+    <div class="home-hero">
+      <div class="home-copy">
+        <h1 id="homeTitle" class="display" tabindex="-1">Kingdom Quiz</h1>
+        <p class="lede">A host-led Bible trivia game for church game nights. One screen runs the game, and everyone else joins from their phone. Pick a role to begin.</p>
+        <ul class="fact-list">
+          <li>750 questions across the Bible and Church History</li>
+          <li>1 to 4 players, taking turns</li>
+          <li>Free to play, no account needed</li>
+        </ul>
+      </div>
+
+      <div class="home-window" aria-hidden="true">
+        <svg viewBox="0 0 400 400" class="rose" focusable="false">
+          <defs>
+            <radialGradient id="shine" cx="35%" cy="30%" r="75%">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.38"/>
+              <stop offset="0.55" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <g class="rose-tracery">
+            <circle cx="200" cy="200" r="186"/>
+            <circle cx="200" cy="200" r="170"/>
+            <line x1="200" y1="112" x2="200" y2="30"/>
+            <line x1="244" y1="123.8" x2="285" y2="52.8"/>
+            <line x1="276.2" y1="156" x2="347.2" y2="115"/>
+            <line x1="288" y1="200" x2="370" y2="200"/>
+            <line x1="276.2" y1="244" x2="347.2" y2="285"/>
+            <line x1="244" y1="276.2" x2="285" y2="347.2"/>
+            <line x1="200" y1="288" x2="200" y2="370"/>
+            <line x1="156" y1="276.2" x2="115" y2="347.2"/>
+            <line x1="123.8" y1="244" x2="52.8" y2="285"/>
+            <line x1="112" y1="200" x2="30" y2="200"/>
+            <line x1="123.8" y1="156" x2="52.8" y2="115"/>
+            <line x1="156" y1="123.8" x2="115" y2="52.8"/>
+          </g>
+          <g class="rose-beads">
+            <circle cx="200" cy="22" r="2.6"/><circle cx="289" cy="45.8" r="2.6"/><circle cx="354.2" cy="111" r="2.6"/>
+            <circle cx="378" cy="200" r="2.6"/><circle cx="354.2" cy="289" r="2.6"/><circle cx="289" cy="354.2" r="2.6"/>
+            <circle cx="200" cy="378" r="2.6"/><circle cx="111" cy="354.2" r="2.6"/><circle cx="45.8" cy="289" r="2.6"/>
+            <circle cx="22" cy="200" r="2.6"/><circle cx="45.8" cy="111" r="2.6"/><circle cx="111" cy="45.8" r="2.6"/>
+          </g>
+          <g class="rose-lobes">
+            <g class="lobe lobe-a"><circle cx="200" cy="130" r="70" fill="#c8102e"/><circle cx="200" cy="130" r="70" fill="url(#shine)"/></g>
+            <g class="lobe lobe-b"><circle cx="270" cy="200" r="70" fill="#1e56a8"/><circle cx="270" cy="200" r="70" fill="url(#shine)"/></g>
+            <g class="lobe lobe-c"><circle cx="200" cy="270" r="70" fill="#f2ac1f"/><circle cx="200" cy="270" r="70" fill="url(#shine)"/></g>
+            <g class="lobe lobe-d"><circle cx="130" cy="200" r="70" fill="#1e7a46"/><circle cx="130" cy="200" r="70" fill="url(#shine)"/></g>
+          </g>
+          <g class="rose-heart">
+            <circle cx="200" cy="200" r="40" fill="#081a3a"/>
+            <path d="M200 176v48M178 195h44" stroke="#f6c453" stroke-width="7" stroke-linecap="round" fill="none"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="role-grid" role="group" aria-label="Choose your role">
+      <button class="role-card role-card-host" type="button" data-role="host">
+        <span class="role-icon"><svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg></span>
+        <span class="role-text">
+          <span class="role-title">Host the game</span>
           <span class="role-desc">Run the trivia on this device. Players take turns answering here.</span>
-        </button>
-        <button class="role-card role-card-b" data-role="audience">
-          <span class="role-icon">📱</span>
-          <span class="role-title">Join as Audience</span>
-          <span class="role-desc">Enter a room code to follow along and vote during "Ask the Audience."</span>
-        </button>
-      </div>
+        </span>
+      </button>
+      <button class="role-card role-card-audience" type="button" data-role="audience">
+        <span class="role-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span>
+        <span class="role-text">
+          <span class="role-title">Join as audience</span>
+          <span class="role-desc">Enter a room code to follow along and vote during “Ask the Audience.”</span>
+        </span>
+      </button>
     </div>
+
+    <footer class="home-footer">
+      <p>Kingdom Quiz is open source.</p>
+      <nav aria-label="Project links">
+        <a href="https://github.com/rccgkd/bible-trivia-game" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+        <a href="https://github.com/rccgkd/bible-trivia-game/issues/new/choose" target="_blank" rel="noopener noreferrer">Report a problem</a>
+        <a href="assets/fonts/OFL-BricolageGrotesque.txt">Font licenses</a>
+      </nav>
+    </footer>
   </section>
 
-  <!-- ============ SCREEN: TUTORIAL (HOST) ============ -->
-  <section id="screen-rules" class="screen narrow">
-    <div class="stage-card">
-      <p class="eyebrow">Quick Training</p>
-      <h2 class="display-lg">How to Play</h2>
-      <p class="subtitle">A 60-second walkthrough before we start — here's everything you'll see on screen.</p>
+  <!-- ============ SCREEN: HOST TUTORIAL ============ -->
+  <section id="screen-rules" class="screen narrow" aria-labelledby="rulesTitle" hidden>
+    <div class="panel">
+      <h1 id="rulesTitle" class="display-sm" tabindex="-1">How to play</h1>
+      <p class="lede lede-sm">A 60-second walkthrough before we start. Here is everything you will see on screen.</p>
 
       <div class="tutorial-grid">
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🔄</span>
-          <h3 class="tutorial-title">Turns</h3>
-          <p class="tutorial-text">1 to 4 players take turns answering, one question at a time, going around the table.</p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🏆</span>
-          <h3 class="tutorial-title">Scoring</h3>
-          <p class="tutorial-text">
-            <span class="pill pill-good">✔ +10</span> correct ·
-            <span class="pill pill-bad">✘ −5</span> wrong ·
-            <span class="pill">➖ 0</span> pass
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-turns"/></svg></span>
+          <h2 class="tutorial-title">Turns</h2>
+          <p>One to four players take turns answering, one question at a time, going around the table.</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-trophy"/></svg></span>
+          <h2 class="tutorial-title">Scoring</h2>
+          <p class="pill-row">
+            <span class="pill pill-good">+10 correct</span>
+            <span class="pill pill-bad">−5 wrong</span>
+            <span class="pill">0 pass</span>
           </p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🃏</span>
-          <h3 class="tutorial-title">Lifelines</h3>
-          <p class="tutorial-text">Each player gets these <strong>once per game</strong>:</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-cards"/></svg></span>
+          <h2 class="tutorial-title">Lifelines</h2>
+          <p>Each player gets these <strong>once per game</strong>:</p>
           <ul class="tutorial-sublist">
-            <li>➗ <strong>50:50</strong> — removes two wrong options</li>
-            <li>📞 <strong>Phone a Friend</strong> — 30s to ask someone</li>
-            <li>🙌 <strong>Ask the Audience</strong> — everyone votes live</li>
+            <li><strong>50:50</strong> removes two wrong options</li>
+            <li><strong>Phone a Friend</strong> gives 30 seconds to ask someone</li>
+            <li><strong>Ask the Audience</strong> lets everyone vote live</li>
           </ul>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🎙️</span>
-          <h3 class="tutorial-title">Host Control</h3>
-          <p class="tutorial-text">Only the host reveals answers and moves the game to the next turn.</p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🔔</span>
-          <h3 class="tutorial-title">Score Pop-Up</h3>
-          <p class="tutorial-text">After every answer, a quick pop-up shows the points earned and the running total — then it's straight to the next turn.</p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">👑</span>
-          <h3 class="tutorial-title">Winning</h3>
-          <p class="tutorial-text">Once everyone's questions are done, the highest score wins the crown.</p>
-        </div>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg></span>
+          <h2 class="tutorial-title">Host control</h2>
+          <p>Only the host reveals answers and moves the game to the next turn.</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></span>
+          <h2 class="tutorial-title">Score pop-up</h2>
+          <p>After every answer, a quick pop-up shows the points earned and the running total, then it is straight to the next turn.</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-crown"/></svg></span>
+          <h2 class="tutorial-title">Winning</h2>
+          <p>Once everyone’s questions are done, the highest score wins the crown.</p>
+        </article>
       </div>
 
-      <button id="rulesContinueBtn" class="btn btn-primary btn-block">✅ Got it — let's set up</button>
+      <button id="rulesContinueBtn" class="btn btn-primary btn-block" type="button">Got it, let’s set up</button>
     </div>
   </section>
 
-  <!-- ============ SCREEN: TUTORIAL (AUDIENCE) ============ -->
-  <section id="screen-audience-tutorial" class="screen narrow">
-    <div class="stage-card">
-      <p class="eyebrow">Quick Training</p>
-      <h2 class="display-lg">Joining as Audience</h2>
-      <p class="subtitle">Here's what happens on your phone during the game.</p>
+  <!-- ============ SCREEN: AUDIENCE TUTORIAL ============ -->
+  <section id="screen-audience-tutorial" class="screen narrow" aria-labelledby="audTutTitle" hidden>
+    <div class="panel">
+      <h1 id="audTutTitle" class="display-sm" tabindex="-1">Joining as audience</h1>
+      <p class="lede lede-sm">Here is what happens on your phone during the game.</p>
 
       <div class="tutorial-grid">
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🔢</span>
-          <h3 class="tutorial-title">Enter the Code</h3>
-          <p class="tutorial-text">Type the 4-character room code shown on the host's screen.</p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">👀</span>
-          <h3 class="tutorial-title">Watch & Wait</h3>
-          <p class="tutorial-text">You'll see the current question and whose turn it is — no action needed most of the time.</p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🙌</span>
-          <h3 class="tutorial-title">When It's Voting Time</h3>
-          <p class="tutorial-text">If the host uses "Ask the Audience," your options light up — tap the one you believe is right.</p>
-        </div>
-        <div class="tutorial-card">
-          <span class="tutorial-icon">🗳️</span>
-          <h3 class="tutorial-title">One Vote Only</h3>
-          <p class="tutorial-text">Once you tap an answer, it's locked in — watch the results bars fill live on the host's screen.</p>
-        </div>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-hash"/></svg></span>
+          <h2 class="tutorial-title">Enter the code</h2>
+          <p>Type the 4-character room code shown on the host’s screen.</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></span>
+          <h2 class="tutorial-title">Watch and wait</h2>
+          <p>You will see the current question and whose turn it is. No action is needed most of the time.</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span>
+          <h2 class="tutorial-title">When it’s voting time</h2>
+          <p>If the host uses “Ask the Audience,” your options light up. Tap the one you believe is right.</p>
+        </article>
+        <article class="tutorial-card">
+          <span class="tutorial-icon"><svg class="icon" aria-hidden="true"><use href="#i-vote"/></svg></span>
+          <h2 class="tutorial-title">One vote only</h2>
+          <p>Once you tap an answer it is locked in. Watch the results fill live on the host’s screen.</p>
+        </article>
       </div>
 
-      <button id="audienceTutorialContinueBtn" class="btn btn-primary btn-block">✅ Got it — join a room</button>
+      <button id="audienceTutorialContinueBtn" class="btn btn-primary btn-block" type="button">Got it, join a room</button>
     </div>
   </section>
 
   <!-- ============ SCREEN: HOST SETUP ============ -->
-  <section id="screen-host-setup" class="screen narrow">
-    <div class="stage-card">
-      <p class="eyebrow">Host Setup</p>
-      <h2 class="display-lg">Set Up Your Game</h2>
+  <section id="screen-host-setup" class="screen narrow" aria-labelledby="setupTitle" hidden>
+    <form id="setupForm" class="panel" novalidate>
+      <h1 id="setupTitle" class="display-sm" tabindex="-1">Set up your game</h1>
 
-      <label class="field-label">How many players?</label>
-      <select id="playerCountSelect" class="field-select">
-        <option value="1">1 player</option>
-        <option value="2" selected>2 players</option>
-        <option value="3">3 players</option>
-        <option value="4">4 players</option>
-      </select>
-
-      <div id="playerNameInputs" class="player-name-grid"></div>
-
-      <label class="field-label">Question Category</label>
-      <div class="chip-row" id="categoryRow">
-        <button class="chip chip-selected" data-val="bible">📖 Bible</button>
-        <button class="chip" data-val="history">⛪ Church History</button>
-      </div>
-      <p class="hint-text category-hint" id="categoryHint">Names, places, numbers, and events straight from Scripture.</p>
-
-      <label class="field-label">Questions per player</label>
-      <div class="chip-row" id="questionsPerPlayerRow">
-        <button class="chip" data-val="5">5</button>
-        <button class="chip chip-selected" data-val="10">10</button>
-        <button class="chip" data-val="15">15</button>
-        <button class="chip" data-val="20">20</button>
+      <div class="field">
+        <label for="playerCountSelect">How many players?</label>
+        <select id="playerCountSelect" class="input">
+          <option value="1">1 player</option>
+          <option value="2" selected>2 players</option>
+          <option value="3">3 players</option>
+          <option value="4">4 players</option>
+        </select>
       </div>
 
-      <button id="startGameBtn" class="btn btn-primary btn-block">Start Game</button>
-      <p class="hint-text">This creates a room code your audience can join from their phones.</p>
-    </div>
+      <fieldset class="field">
+        <legend>Player names</legend>
+        <div id="playerNameInputs" class="name-grid"></div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend>Question category</legend>
+        <div class="chip-group" id="categoryRow">
+          <label class="chip">
+            <input type="radio" name="category" value="bible" checked />
+            <span><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Bible</span>
+          </label>
+          <label class="chip">
+            <input type="radio" name="category" value="history" />
+            <span><svg class="icon" aria-hidden="true"><use href="#i-church"/></svg>Church History</span>
+          </label>
+        </div>
+        <p class="hint" id="categoryHint">Names, places, numbers, and events straight from Scripture.</p>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend>Questions per player</legend>
+        <div class="chip-group" id="questionsPerPlayerRow">
+          <label class="chip chip-num"><input type="radio" name="perPlayer" value="5" /><span>5</span></label>
+          <label class="chip chip-num"><input type="radio" name="perPlayer" value="10" checked /><span>10</span></label>
+          <label class="chip chip-num"><input type="radio" name="perPlayer" value="15" /><span>15</span></label>
+          <label class="chip chip-num"><input type="radio" name="perPlayer" value="20" /><span>20</span></label>
+        </div>
+      </fieldset>
+
+      <button id="startGameBtn" class="btn btn-primary btn-block" type="submit">
+        <span class="btn-label">Start game</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+      <p class="hint center">This creates a room code your audience can join from their phones.</p>
+    </form>
   </section>
 
-  <!-- ============ SCREEN: HOST GAME VIEW ============ -->
-  <section id="screen-host-game" class="screen">
+  <!-- ============ SCREEN: HOST GAME ============ -->
+  <section id="screen-host-game" class="screen" aria-label="Game in progress" hidden>
     <div class="host-layout">
 
-      <!-- Fixed-size quiz stage: question + options never change size
-           between questions, so the layout doesn't jump. Score is
-           NOT shown here — only a quick pop-up after each answer —
-           so this stage gets nearly the whole screen. -->
       <div class="quiz-stage-wrap">
         <div class="quiz-stage" id="quizStage">
           <div class="stage-turn-row">
-            <span class="stage-turn-label" id="activePlayerLabel">🎙️ Player 1's turn</span>
+            <h1 class="stage-turn-label" id="activePlayerLabel" tabindex="-1">Player 1’s turn</h1>
             <span class="stage-round-label" id="roundLabel">Question 1 of 10</span>
           </div>
           <p class="question-text" id="questionText">Loading question…</p>
-          <div class="options-list" id="optionsGrid"></div>
+          <div class="options-list" id="optionsGrid" role="group" aria-label="Answer options"></div>
         </div>
         <div class="stage-sweep" id="stageSweep" aria-hidden="true"></div>
       </div>
 
       <div class="control-deck">
-        <div id="audienceResultsPanel" class="audience-results hidden">
-          <p class="field-label">🙌 Audience Says…</p>
+        <div id="audienceResultsPanel" class="audience-results" hidden>
+          <div class="audience-head">
+            <h2 class="audience-title">The audience says</h2>
+            <span id="hostAskTimer" class="audience-timer">20s</span>
+          </div>
+          <div class="timer-track" aria-hidden="true"><div id="hostAskTimerBar" class="timer-fill"></div></div>
           <div id="audienceBars" class="audience-bars"></div>
         </div>
 
         <div class="host-action-row">
-          <button id="submitAnswerBtn" class="btn btn-primary" disabled>✅ Submit Answer</button>
-          <button id="passBtn" class="btn btn-ghost">⏭️ Pass / Reveal</button>
-          <button id="nextTurnBtn" class="btn btn-secondary hidden">➡️ Next Turn</button>
-        </div>
-
-        <p id="explanationText" class="explanation-text hidden"></p>
-
-        <div class="lifeline-row">
-          <button class="lifeline-btn" id="lifeline5050" data-lifeline="fiftyFifty">
-            <span class="lifeline-icon">➗</span> 50:50
+          <button id="submitAnswerBtn" class="btn btn-primary" type="button" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Submit answer
           </button>
-          <button class="lifeline-btn" id="lifelinePhone" data-lifeline="phoneAFriend">
-            <span class="lifeline-icon">📞</span> Phone a Friend
+          <button id="passBtn" class="btn btn-ghost" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-skip"/></svg>Pass and reveal
           </button>
-          <button class="lifeline-btn" id="lifelineAudience" data-lifeline="askAudience">
-            <span class="lifeline-icon">🙌</span> Ask the Audience
+          <button id="nextTurnBtn" class="btn btn-accent" type="button" hidden>
+            Next turn<svg class="icon" aria-hidden="true"><use href="#i-next"/></svg>
           </button>
         </div>
 
-        <button id="restartMidGameBtn" class="btn btn-ghost small-btn">↺ Restart Game</button>
+        <p id="explanationText" class="explanation" hidden></p>
+
+        <div class="lifeline-row" role="group" aria-label="Lifelines">
+          <button class="lifeline-btn" id="lifeline5050" type="button" data-lifeline="fiftyFifty">
+            <svg class="icon" aria-hidden="true"><use href="#i-split"/></svg>50:50
+          </button>
+          <button class="lifeline-btn" id="lifelinePhone" type="button" data-lifeline="phoneAFriend">
+            <svg class="icon" aria-hidden="true"><use href="#i-call"/></svg>Phone a Friend
+          </button>
+          <button class="lifeline-btn" id="lifelineAudience" type="button" data-lifeline="askAudience">
+            <svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Ask the Audience
+          </button>
+        </div>
+
+        <div class="deck-foot">
+          <button id="restartMidGameBtn" class="btn btn-quiet btn-sm" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-restart"/></svg>Restart game
+          </button>
+          <p class="shortcut-hint">Keyboard: A–D to choose, Enter to submit, N for next turn</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- ============ SCREEN: AUDIENCE JOIN ============ -->
-  <section id="screen-audience-join" class="screen narrow">
-    <div class="stage-card center">
-      <p class="eyebrow">Audience</p>
-      <h2 class="display-lg">Join a Room</h2>
-      <p class="subtitle">Ask the host for the 4-character room code shown on their screen.</p>
-      <input id="roomCodeInput" class="field-select code-input" maxlength="4" placeholder="ABCD" autocapitalize="characters" />
-      <button id="joinRoomBtn" class="btn btn-primary btn-block">Join Room</button>
-      <p id="joinError" class="error-text hidden">Room not found. Double-check the code and try again.</p>
-    </div>
+  <section id="screen-audience-join" class="screen narrow" aria-labelledby="joinTitle" hidden>
+    <form id="joinForm" class="panel center" novalidate>
+      <h1 id="joinTitle" class="display-sm" tabindex="-1">Join a room</h1>
+      <p class="lede lede-sm">Ask the host for the 4-character room code shown on their screen.</p>
+      <div class="field">
+        <label for="roomCodeInput" class="sr-only">Room code</label>
+        <input id="roomCodeInput" class="input code-input" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text" aria-describedby="joinError" />
+      </div>
+      <button id="joinRoomBtn" class="btn btn-primary btn-block" type="submit">
+        <span class="btn-label">Join room</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+      <p id="joinError" class="form-error" role="alert" hidden>Room not found. Double-check the code and try again.</p>
+    </form>
   </section>
 
   <!-- ============ SCREEN: AUDIENCE VIEW ============ -->
-  <section id="screen-audience-view" class="screen">
-    <div class="stage-card audience-stage">
-      <p class="eyebrow" id="audienceActivePlayer">Waiting for host…</p>
-      <h2 class="display-md" id="audienceQuestionText">The game will begin shortly.</h2>
+  <section id="screen-audience-view" class="screen" aria-label="Following the game" hidden>
+    <div class="quiz-stage audience-stage">
+      <h1 class="stage-turn-label" id="audienceActivePlayer" tabindex="-1">Waiting for host…</h1>
+      <p class="question-text" id="audienceQuestionText">The game will begin shortly.</p>
 
-      <div id="audienceWaiting" class="waiting-overlay">
-        <div class="pulse-dot"></div>
-        <p>Watching the host's screen…</p>
+      <div id="audienceWaiting" class="waiting">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <p id="audienceWaitingText">Watching the host’s screen…</p>
       </div>
 
-      <div id="audienceVotingPanel" class="hidden">
-        <div class="timer-track"><div id="audienceTimerBar" class="timer-fill"></div></div>
-        <p class="field-label" id="audienceTimer">20s to vote</p>
-        <div class="options-list" id="audienceOptionsGrid"></div>
-        <p id="audienceVoteConfirm" class="vote-confirm hidden">✅ Vote recorded! Watch the results fill in live.</p>
+      <div id="audienceVotingPanel" hidden>
+        <div class="timer-track" aria-hidden="true"><div id="audienceTimerBar" class="timer-fill"></div></div>
+        <p class="vote-timer" id="audienceTimer">20s to vote</p>
+        <div class="options-list" id="audienceOptionsGrid" role="group" aria-label="Vote for an answer"></div>
+        <p id="audienceVoteConfirm" class="vote-confirm" hidden>
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Vote recorded. Watch the results fill in live.
+        </p>
       </div>
     </div>
   </section>
 
   <!-- ============ SCREEN: GAME OVER ============ -->
-  <section id="screen-gameover" class="screen narrow">
-    <div class="stage-card center">
-      <p class="eyebrow">Final Results</p>
-      <h2 class="display-xl">🏆 Game Over</h2>
-      <p class="eyebrow chart-heading">Ranking, Best to Last</p>
-      <div id="leaderboardTable" class="leaderboard-table"></div>
+  <section id="screen-gameover" class="screen narrow" aria-labelledby="gameoverTitle" hidden>
+    <div class="panel center">
+      <h1 id="gameoverTitle" class="display-sm" tabindex="-1">Game over</h1>
+      <p class="lede lede-sm">Final ranking, best to last.</p>
+      <ol id="leaderboardTable" class="leaderboard"></ol>
 
       <div class="host-action-row center">
-        <button id="rematchBtn" class="btn btn-primary">Rematch (Reset Scores)</button>
-        <button id="newGameBtn" class="btn btn-ghost">New Game / New Players</button>
+        <button id="rematchBtn" class="btn btn-primary" type="button">Rematch (reset scores)</button>
+        <button id="newGameBtn" class="btn btn-ghost" type="button">New game, new players</button>
       </div>
     </div>
   </section>
 
 </main>
 
-<script src="js/firebase-config.js"></script>
-<script src="js/sounds.js"></script>
-<script src="js/questions.js"></script>
-<script src="js/app.js"></script>
+<!-- ============ Dialogs ============ -->
+<dialog id="confirmDialog" class="dialog" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+  <div class="dialog-card">
+    <h2 id="confirmTitle" class="dialog-title"></h2>
+    <p id="confirmText" class="dialog-text"></p>
+    <div class="dialog-actions">
+      <button id="confirmCancel" class="btn btn-ghost" type="button">Cancel</button>
+      <button id="confirmOk" class="btn btn-primary" type="button">Confirm</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="phoneDialog" class="dialog" aria-labelledby="phoneTitle">
+  <div class="dialog-card center">
+    <h2 id="phoneTitle" class="dialog-title">Phone a Friend</h2>
+    <p class="dialog-text">Step away and consult someone off-screen. You have:</p>
+    <p id="phoneCountdown" class="phone-count" aria-hidden="true">30</p>
+    <div class="timer-track" aria-hidden="true"><div id="phoneTimerBar" class="timer-fill"></div></div>
+    <button id="phoneDoneBtn" class="btn btn-primary btn-block" type="button">Done</button>
+  </div>
+</dialog>
+
+<!-- Toasts -->
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
 </body>
 </html>

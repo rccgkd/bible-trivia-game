@@ -1,0 +1,51 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "rooms": {
+      "$roomId": {
+        ".read": "auth != null",
+
+        ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid) || data.child('hostUid').val() === auth.uid)",
+
+        ".validate": "newData.hasChildren(['hostUid', 'gameState'])",
+
+        "hostUid": { ".validate": "newData.isString() && newData.val().length <= 128" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "gameState": { ".validate": "newData.isString() && (newData.val() === 'PLAYING' || newData.val() === 'GAMEOVER' || newData.val() === 'ENDED')" },
+        "activePlayerIndex": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+        "totalQuestionsPerPlayer": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50" },
+
+        "players": {
+          "$index": {
+            "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "score": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "currentQuestion": {
+          "text": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+          "options": {
+            "$optionIndex": { ".validate": "newData.isString() && newData.val().length <= 400" }
+          },
+          "questionNumber": { ".validate": "newData.isNumber()" },
+          "totalQuestionsInSession": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        },
+
+        "lifelines": {
+          "askAudience": {
+            "votes": {
+              "$uid": {
+                ".write": "auth != null && auth.uid === $uid && root.child('rooms/' + $roomId + '/lifelines/askAudience/status').val() === 'ACTIVE'",
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

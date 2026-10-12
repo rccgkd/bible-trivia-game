@@ -1,17 +1,20 @@
 // ============================================================
 // firebase-config.js
 //
-// PASTE YOUR OWN FIREBASE CONFIG BELOW.
-// You get this object from: Firebase Console → Project Settings
-// → General tab → "Your apps" → the </> (Web app) icon.
-// Follow the step-by-step guide you were given for exactly where
-// to find this. Do NOT worry about this being "public" — a
-// Firebase web config is meant to be visible in client code; your
-// actual security comes from the Database Rules you set in the
-// Firebase console, not from hiding this file.
+// Connection details for the Firebase project that powers live
+// audience voting. These values are IDENTIFIERS, not passwords:
+// every Firebase web app ships them to the browser by design.
+// What protects the data is the set of Realtime Database rules
+// in database.rules.json (see docs/FIREBASE_SETUP.md), together
+// with the optional hardening steps described there.
+//
+// Never put a service-account key or any "private key" in this
+// repository. The web config below is the only thing needed.
 // ============================================================
 
-const firebaseConfig = {
+export const FIREBASE_SDK_VERSION = '10.13.0';
+
+export const firebaseConfig = {
   apiKey: "AIzaSyDVK3E7Sc7LGAFfyF_U9qaH4rIT2PU3BZM",
   authDomain: "kingdom-quiz-feeb8.firebaseapp.com",
   databaseURL: "https://kingdom-quiz-feeb8-default-rtdb.firebaseio.com",
@@ -21,7 +24,7 @@ const firebaseConfig = {
   appId: "1:226438871312:web:c5bf956ad036d43d310d95"
 };
 
-// Initialize Firebase (compat SDK — simplest for beginners, no build tools needed)
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+/** False while the placeholder values are still in place: the game then runs host-only. */
+export function isFirebaseConfigured() {
+  return typeof firebaseConfig.apiKey === 'string' && !firebaseConfig.apiKey.startsWith('PASTE_');
+}

@@ -1,0 +1,96 @@
+# Builds, checks and publishes the site.
+#
+#   - Every pull request: builds and checks the site (nothing is published).
+#   - Every merge to main (and the "Run workflow" button): builds, checks, then publishes.
+#
+# One-time setting (Settings > Pages > Source > "GitHub Actions") is explained in docs/DEPLOYMENT.md.
+
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: read-only unless a job asks for more
+permissions:
+  contents: read
+
+# Only one deployment at a time; a newer pull-request run replaces an older one
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build and check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7.0.1
+
+      # The build uses only built-in Node.js features, so there are no packages to install or cache.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Lint (syntax and JSON)
+        run: node scripts/lint.mjs
+
+      # Validates all 750 questions, fills in the site address, copies the public files to dist/,
+      # and checks that every file the pages refer to exists. Stops the deployment if anything is wrong.
+      - name: Build and check links
+        run: node scripts/build.mjs
+
+      # Reports only. A low score shows as a warning in the log and never blocks a deployment.
+      - name: Lighthouse report
+        continue-on-error: true
+        run: npx --yes @lhci/cli@0.15 autorun --config=.lighthouserc.json
+
+      - name: Save Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: lighthouse-report
+          path: .lighthouseci
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Save a copy of the built site (pull requests only)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: built-site
+          path: dist
+          retention-days: 7
+
+      - name: Set up Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6.0.0
+
+      - name: Package the site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    name: Publish
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5.0.0

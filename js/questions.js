@@ -1,14 +1,22 @@
 // ============================================================
-// BIBLE_QUESTIONS — regenerated from scratch, Bible content only
-// (no church history, archaeology, or extra-biblical material).
-// Every explanation quotes the King James Version verse in full
-// (public domain text). Every question's four options are kept
-// deliberately parallel in style and length, drawn from real,
-// plausible biblical near-misses — nothing is padded, qualified,
-// or hinted only on the correct choice.
+// Question bank: 750 questions in two categories.
+//
+//   category omitted (or "bible")  -> Bible (600 questions)
+//   category: "history"            -> Church History (150 questions)
+//
+// Format of every entry:
+//   id           unique number
+//   question     the question text
+//   options      four answers; the CORRECT one is always listed first
+//                (the game shuffles the order on screen)
+//   correctIndex always 0 for the reason above
+//   explanation  KJV verse (Bible) or a short fact (Church History)
+//
+// Bible explanations quote the King James Version (public domain).
+// scripts/build.mjs checks this file on every deployment.
 // ============================================================
 
-const BIBLE_QUESTIONS = [
+export const BIBLE_QUESTIONS = [
   // ---------- GENESIS ----------
   { id: 1, question: "On which day of creation did God make the sun, moon, and stars?", options: ["The fourth day", "The first day", "The third day", "The sixth day"], correctIndex: 0, explanation: "Genesis 1:19 — \"And the evening and the morning were the fourth day.\"" },
   { id: 2, question: "Into how many heads did the river that watered the garden of Eden part?", options: ["Four heads", "Two heads", "Seven heads", "Three heads"], correctIndex: 0, explanation: "Genesis 2:10 — \"And a river went out of Eden to water the garden; and from thence it was parted, and became into four heads.\"" },
@@ -857,13 +865,3 @@ const BIBLE_QUESTIONS = [
   { id: 749, question: "The ancient Christian symbol of the fish (ichthys), formed from a Greek acrostic, was especially associated with what use among early believers?", options: ["A covert identifying symbol during times of persecution", "The official seal of the Council of Nicaea", "A symbol used exclusively in baptismal ceremonies", "The emblem adopted by the first Bible societies"], category: "history", correctIndex: 0, explanation: "Tradition holds the ichthys (fish) symbol, from a Greek acrostic for 'Jesus Christ, Son of God, Savior,' served as a covert identifying mark among early Christians." },
   { id: 750, question: "The term 'Ante-Nicene Fathers' refers to Christian writers whose works date from before which major 4th-century church council?", options: ["The Council of Nicaea (325 AD)", "The Council of Chalcedon (451 AD)", "The Council of Trent (16th century)", "The Council of Constance (15th century)"], category: "history", correctIndex: 0, explanation: "'Ante-Nicene Fathers' is a standard historical term for Christian writers active before the Council of Nicaea in 325 AD." },
 ];
-
-// Fisher-Yates shuffle so each session/turn can get randomized order if desired
-function shuffleQuestions(arr) {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}

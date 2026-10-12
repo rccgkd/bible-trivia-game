@@ -1,0 +1,13 @@
+# Keeps the automation up to date. Dependabot opens a pull request when a newer
+# version of an action used in .github/workflows is available; review and merge it
+# from the GitHub website like any other pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ['*']
+    labels: [dependencies]

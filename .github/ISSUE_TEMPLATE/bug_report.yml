@@ -1,0 +1,23 @@
+name: Something is not working
+description: The site or a game feature does not behave as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe what you did and what you saw instead of what you expected.
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Were you the host or the audience?
+      options: [Host, Audience, Not sure]
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 14, Safari / Windows laptop, Chrome

@@ -1,0 +1,18 @@
+name: A question or answer is wrong
+description: Report a mistake in a Bible or Church History question.
+labels: [questions]
+body:
+  - type: input
+    id: qid
+    attributes:
+      label: Question number or wording
+      description: The id from js/questions.js, or the first few words of the question.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong, and what should it say?
+      description: Include the Bible reference or a source if you can.
+    validations:
+      required: true
