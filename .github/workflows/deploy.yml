@@ -34,7 +34,7 @@ jobs:
 
       # The build uses only built-in Node.js features, so there are no packages to install or cache.
       - name: Set up Node.js
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: '22'
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Save Lighthouse report
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: lighthouse-report
           path: .lighthouseci
@@ -62,7 +62,7 @@ jobs:
 
       - name: Save a copy of the built site (pull requests only)
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: built-site
           path: dist
@@ -93,4 +93,4 @@ jobs:
     steps:
       - name: Publish to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5.0.0
+        uses: actions/deploy-pages@v5.0.1
